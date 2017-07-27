@@ -51,10 +51,10 @@ _.extend(Workbook.prototype, {
     addDrawings: function (drawings) {
         this.drawings.push(drawings);
     },
-    
+
     /**
      * Set number of rows to repeat for this sheet.
-     * 
+     *
      * @param {String} sheet name
      * @param {int} number of rows to repeat from the top
      * @returns {undefined}
@@ -68,15 +68,15 @@ _.extend(Workbook.prototype, {
     	}
     	this.printTitles[inSheet].top = inRowCount;
     },
-    
+
     /**
      * Set number of rows to repeat for this sheet.
-     * 
+     *
      * @param {String} sheet name
      * @param {int} number of columns to repeat from the left
      * @returns {undefined}
      */
-    setPrintTitleLeft: function (inSheet, inColumn) {
+    setPrintTitleLeft: function (inSheet, inRowCount) {
     	if (this.printTitles == null) {
     		this.printTitles = {};
     	}
@@ -212,7 +212,7 @@ _.extend(Workbook.prototype, {
             sheets.appendChild(sheet);
         }
         wb.appendChild(sheets);
-        
+
         //now to add repeating rows
         var definedNames = util.createElement(doc, "definedNames");
         var ctr = 0;
@@ -224,23 +224,23 @@ _.extend(Workbook.prototype, {
         	var definedName = doc.createElement('definedName');
         	definedName.setAttribute("name", "_xlnm.Print_Titles");
         	definedName.setAttribute("localSheetId", ctr++);
-        	
+
         	var value = "";
         	if (entry.top) {
         		value += name + "!$1:$" + entry.top;
         		if (entry.left) {
-        			value += ","
+        			value += ",";
         		}
         	}
         	if (entry.left) {
         		value += name + "!$A:$" + entry.left;
         	}
-        	
+
         	definedName.appendChild(doc.createTextNode(value));
         	definedNames.appendChild(definedName);
         }
         wb.appendChild(definedNames);
-        
+
         return doc;
     },
 
