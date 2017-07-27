@@ -1,22 +1,15 @@
-![bounties received](https://www.bountysource.com/badge/team?team_id=59027&style=bounties_received)
-
-No longer maintained
-====================
-
-Sob story of the day. For the first time in months, I had time to sit down and work on this project. So, I did. Tweaked a couple things, added stuff to the 'new' website.. then realized that I'd prefer to be spending time with my family. So, this project is no longer maintained. Thank you to those who sent encouraging emails over the years. This was an interesting project. Goodbye.
-
-excel-builder.js
+excel-builder-webpack.js
 ================
+An excel-builder version which support webpack
+This is a fork from excel-builder which wasn't maintained.
 
-A way to build excel files with javascript
-
-Documentation at http://excelbuilderjs.com/. This is slightly outdated, but includes a 'cookbook' and some 
+Documentation at http://excelbuilderjs.com/. This is slightly outdated, but includes a 'cookbook' and some
 API documentation. New site coming soon with up-to-date documentation, and ability to contribute - see [https://github.com/stephenliberty/excel-builder-site](https://github.com/stephenliberty/excel-builder-site)
 
 Installing via NPM
 ------------------
 
-	npm install excel-builder
+	npm install excel-builder-webpack
 
 
 Building for web
@@ -43,6 +36,6 @@ excel-builder.dist.js -> All files in the EB package. Requires lodash and jszip 
 Contributing
 -------------
 
-Originally this project was sort of sponsored by a previous company I worked for. Unfortunately now it has no backing, and my time is very limited while I work on side projects to help make ends meet. If you use bountysource or contribute via paypal (to stephen@liberty-irm.com) to open up bounties on issues, it is very, very likely that I will add features and fix issues sooner than later. 
+Originally this project was sort of sponsored by a previous company I worked for. Unfortunately now it has no backing, and my time is very limited while I work on side projects to help make ends meet. If you use bountysource or contribute via paypal (to stephen@liberty-irm.com) to open up bounties on issues, it is very, very likely that I will add features and fix issues sooner than later.
 
-Otherwise, if you have the ability to contribute yourself, please just do so as normal - I'll review and pull changes as they come in as quickly as I can. 
+Otherwise, if you have the ability to contribute yourself, please just do so as normal - I'll review and pull changes as they come in as quickly as I can.
