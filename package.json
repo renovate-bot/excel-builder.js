@@ -16,7 +16,7 @@
     "xlsx",
     "spreadsheet"
   ],
-  "author": "Hiep Ho",
+  "author": "Stephen Liberty",
   "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/hohiep102/excel-builder.js/issues"
@@ -35,7 +35,7 @@
   "dependencies": {
     "grunt": "^1.0.4",
     "grunt-contrib-watch": "^1.1.0",
-    "jszip": "^3.2.2",
+    "jszip": "^2.6.1",
     "lodash": "^4.17.15",
     "q": "^1.5.1"
   },
