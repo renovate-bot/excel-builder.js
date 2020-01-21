@@ -1,4 +1,4 @@
-require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require=(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -185,6 +185,85 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],2:[function(require,module,exports){
+(function (setImmediate,clearImmediate){
+var nextTick = require('process/browser.js').nextTick;
+var apply = Function.prototype.apply;
+var slice = Array.prototype.slice;
+var immediateIds = {};
+var nextImmediateId = 0;
+
+// DOM APIs, for completeness
+
+exports.setTimeout = function() {
+  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+};
+exports.setInterval = function() {
+  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+};
+exports.clearTimeout =
+exports.clearInterval = function(timeout) { timeout.close(); };
+
+function Timeout(id, clearFn) {
+  this._id = id;
+  this._clearFn = clearFn;
+}
+Timeout.prototype.unref = Timeout.prototype.ref = function() {};
+Timeout.prototype.close = function() {
+  this._clearFn.call(window, this._id);
+};
+
+// Does not start the time, just sets up the members needed.
+exports.enroll = function(item, msecs) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = msecs;
+};
+
+exports.unenroll = function(item) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = -1;
+};
+
+exports._unrefActive = exports.active = function(item) {
+  clearTimeout(item._idleTimeoutId);
+
+  var msecs = item._idleTimeout;
+  if (msecs >= 0) {
+    item._idleTimeoutId = setTimeout(function onTimeout() {
+      if (item._onTimeout)
+        item._onTimeout();
+    }, msecs);
+  }
+};
+
+// That's not how node.js implements it but the exposed api is the same.
+exports.setImmediate = typeof setImmediate === "function" ? setImmediate : function(fn) {
+  var id = nextImmediateId++;
+  var args = arguments.length < 2 ? false : slice.call(arguments, 1);
+
+  immediateIds[id] = true;
+
+  nextTick(function onNextTick() {
+    if (immediateIds[id]) {
+      // fn.call() is faster so we optimize for the common use-case
+      // @see http://jsperf.com/call-apply-segu
+      if (args) {
+        fn.apply(null, args);
+      } else {
+        fn.call(null);
+      }
+      // Prevent ids from leaking
+      exports.clearImmediate(id);
+    }
+  });
+
+  return id;
+};
+
+exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
+  delete immediateIds[id];
+};
+}).call(this,require("timers").setImmediate,require("timers").clearImmediate)
+},{"process/browser.js":1,"timers":2}],3:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -252,7 +331,7 @@ _.extend(AbsoluteAnchor.prototype, {
 });
 module.exports = AbsoluteAnchor;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../util":20}],3:[function(require,module,exports){
+},{"../util":21}],4:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -265,7 +344,7 @@ _.extend(Chart.prototype, {
 });
 module.exports = Chart;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -338,7 +417,7 @@ _.extend(OneCellAnchor.prototype, {
 });
 module.exports = OneCellAnchor;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../util":20}],5:[function(require,module,exports){
+},{"../util":21}],6:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -448,7 +527,7 @@ _.extend(Picture.prototype, {
 module.exports = Picture;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../util":20,"./index":7}],6:[function(require,module,exports){
+},{"../util":21,"./index":8}],7:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -529,7 +608,7 @@ _.extend(TwoCellAnchor.prototype, {
 module.exports = TwoCellAnchor;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../util":20}],7:[function(require,module,exports){
+},{"../util":21}],8:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -582,7 +661,7 @@ Object.defineProperties(Drawing, {
 module.exports = Drawing;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./AbsoluteAnchor":2,"./Chart":3,"./OneCellAnchor":4,"./Picture":5,"./TwoCellAnchor":6}],8:[function(require,module,exports){
+},{"./AbsoluteAnchor":3,"./Chart":4,"./OneCellAnchor":5,"./Picture":6,"./TwoCellAnchor":7}],9:[function(require,module,exports){
 (function (global){
 /**
  * @module Excel/Drawings
@@ -633,7 +712,7 @@ _.extend(Drawings.prototype, {
 
 module.exports = Drawings;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./RelationshipManager":12,"./util":20}],9:[function(require,module,exports){
+},{"./RelationshipManager":13,"./util":21}],10:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -684,7 +763,7 @@ _.extend(Pane.prototype, {
 
 module.exports = Pane;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 /**
  * This is mostly a global spot where all of the relationship managers can get and set
@@ -693,7 +772,7 @@ module.exports = Pane;
  */
 module.exports = {};
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 "use strict";
 
 module.exports = {
@@ -711,7 +790,7 @@ module.exports = {
     }
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -777,7 +856,7 @@ _.extend(RelationshipManager.prototype, {
 module.exports = RelationshipManager;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Paths":10,"./util":20}],13:[function(require,module,exports){
+},{"./Paths":11,"./util":21}],14:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -835,7 +914,7 @@ _.extend(sharedStrings.prototype, {
 });
 module.exports = sharedStrings;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":20}],14:[function(require,module,exports){
+},{"./util":21}],15:[function(require,module,exports){
 (function (global){
 /**
  * @module Excel/SheetView
@@ -925,7 +1004,7 @@ _.extend(SheetView.prototype, {
 module.exports = SheetView;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Pane":9,"./util":20}],15:[function(require,module,exports){
+},{"./Pane":10,"./util":21}],16:[function(require,module,exports){
 (function (global){
 /**
  * @module Excel/StyleSheet
@@ -1622,7 +1701,7 @@ _.extend(StyleSheet.prototype, {
 module.exports = StyleSheet;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":20}],16:[function(require,module,exports){
+},{"./util":21}],17:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -1799,7 +1878,7 @@ _.extend(Table.prototype, {
 });
 module.exports = Table;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":20}],17:[function(require,module,exports){
+},{"./util":21}],18:[function(require,module,exports){
 (function (global){
 "use strict";
 var Q = require('q');
@@ -2130,7 +2209,7 @@ _.extend(Workbook.prototype, {
 module.exports = Workbook;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Paths":10,"./RelationshipManager":12,"./SharedStrings":13,"./StyleSheet":15,"./Worksheet":18,"./XMLDOM":19,"./util":20,"q":"q"}],18:[function(require,module,exports){
+},{"./Paths":11,"./RelationshipManager":13,"./SharedStrings":14,"./StyleSheet":16,"./Worksheet":19,"./XMLDOM":20,"./util":21,"q":"q"}],19:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -2744,7 +2823,7 @@ var SheetView = require('./SheetView');
     module.exports = Worksheet;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./RelationshipManager":12,"./SheetView":14,"./util":20}],19:[function(require,module,exports){
+},{"./RelationshipManager":13,"./SheetView":15,"./util":21}],20:[function(require,module,exports){
 (function (global){
 'use strict';
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -2871,7 +2950,7 @@ _.extend(XMLDOM.XMLNode.prototype, {
 
 module.exports = XMLDOM;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 "use strict";
 var XMLDOM = require('./XMLDOM');
@@ -3001,7 +3080,7 @@ var util = {
 module.exports = util;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./XMLDOM":19}],21:[function(require,module,exports){
+},{"./XMLDOM":20}],22:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -3074,13 +3153,13 @@ _.extend(Template.prototype, {
 module.exports = Template;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../Excel/Table":16,"../Excel/Workbook":17}],22:[function(require,module,exports){
+},{"../Excel/Table":17,"../Excel/Workbook":18}],23:[function(require,module,exports){
 "use strict";
 module.exports = {
     BasicReport: require('./BasicReport')
 };
 
-},{"./BasicReport":21}],23:[function(require,module,exports){
+},{"./BasicReport":22}],24:[function(require,module,exports){
 (function (global){
 "use strict";
 var _ = (typeof window !== "undefined" ? window['_'] : typeof global !== "undefined" ? global['_'] : null);
@@ -3137,7 +3216,7 @@ var Factory = {
 module.exports = Factory;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Excel/Workbook":17}],24:[function(require,module,exports){
+},{"./Excel/Workbook":18}],25:[function(require,module,exports){
 "use strict";
 
 var EBExport = module.exports = {
@@ -3168,8 +3247,8 @@ try {
     console.info("Not attaching EB to window");
 }
 
-},{"./Excel/Drawing/index":7,"./Excel/Drawings":8,"./Excel/Pane":9,"./Excel/Paths":10,"./Excel/Positioning":11,"./Excel/RelationshipManager":12,"./Excel/SharedStrings":13,"./Excel/SheetView":14,"./Excel/StyleSheet":15,"./Excel/Table":16,"./Excel/Workbook":17,"./Excel/Worksheet":18,"./Excel/XMLDOM":19,"./Excel/util":20,"./Template":22,"./excel-builder":23}],"q":[function(require,module,exports){
-(function (process){
+},{"./Excel/Drawing/index":8,"./Excel/Drawings":9,"./Excel/Pane":10,"./Excel/Paths":11,"./Excel/Positioning":12,"./Excel/RelationshipManager":13,"./Excel/SharedStrings":14,"./Excel/SheetView":15,"./Excel/StyleSheet":16,"./Excel/Table":17,"./Excel/Workbook":18,"./Excel/Worksheet":19,"./Excel/XMLDOM":20,"./Excel/util":21,"./Template":23,"./excel-builder":24}],"q":[function(require,module,exports){
+(function (process,setImmediate){
 // vim:ts=4:sts=4:sw=4:
 /*!
  *
@@ -4817,9 +4896,12 @@ function any(promises) {
         function onRejected(err) {
             pendingCount--;
             if (pendingCount === 0) {
-                err.message = ("Q can't get fulfillment value from any promise, all " +
-                    "promises were rejected. Last error message: " + err.message);
-                deferred.reject(err);
+                var rejection = err || new Error("" + err);
+
+                rejection.message = ("Q can't get fulfillment value from any promise, all " +
+                    "promises were rejected. Last error message: " + rejection.message);
+
+                deferred.reject(rejection);
             }
         }
         function onProgress(progress) {
@@ -5244,5 +5326,5 @@ return Q;
 
 });
 
-}).call(this,require('_process'))
-},{"_process":1}]},{},[2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]);
+}).call(this,require('_process'),require("timers").setImmediate)
+},{"_process":1,"timers":2}]},{},[24,3,4,8,5,6,7,9,10,11,12,13,14,15,16,17,21,18,19,20,25,22,23]);

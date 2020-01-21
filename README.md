@@ -1,4 +1,4 @@
-excel-builder-webpack.js
+excel-builder-webpacker.js
 ================
 An excel-builder version which support webpack
 This is a fork from excel-builder which wasn't maintained.
@@ -9,7 +9,7 @@ API documentation. New site coming soon with up-to-date documentation, and abili
 Installing via NPM
 ------------------
 
-	npm install excel-builder-webpack
+	npm install excel-builder-webpacker
 
 
 Building for web

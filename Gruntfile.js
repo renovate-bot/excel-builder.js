@@ -1,9 +1,10 @@
 var _ = require('lodash');
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
     // Project configuration.
     grunt.initConfig({
+        packageName: 'excel-builder',
         pkg: grunt.file.readJSON('package.json'),
         browserify: {
             dist: {
@@ -39,8 +40,8 @@ module.exports = function(grunt) {
             },
             optimize: {
                 files: {
-                    'dist/<%= pkg.name %>.compiled.min.js': ['dist/<%= pkg.name %>.compiled.js'],
-                    'dist/<%= pkg.name %>.dist.min.js': ['dist/<%= pkg.name %>.dist.js']
+                    'dist/<%= packageName %>.compiled.min.js': ['dist/<%= packageName %>.compiled.js'],
+                    'dist/<%= packageName %>.dist.min.js': ['dist/<%= packageName %>.dist.js']
                 }
             }
         },
@@ -61,8 +62,8 @@ module.exports = function(grunt) {
             }
         },
     });
-    
-    
+
+
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-uglify');
