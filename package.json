@@ -1,6 +1,6 @@
 {
   "name": "excel-builder-webpacker",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Customized version of excel-builder that can be run with webpack",
   "main": "src/index.js",
   "scripts": {
