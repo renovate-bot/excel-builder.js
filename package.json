@@ -1,6 +1,6 @@
 {
   "name": "excel-builder-webpacker",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Customized version of excel-builder that can be run with webpack",
   "main": "src/index.js",
   "scripts": {
@@ -32,12 +32,12 @@
     "grunt-contrib-jasmine": "^2.1.0",
     "grunt-contrib-jshint": "2.1.0",
     "grunt-contrib-uglify": "4.0.1",
-    "grunt-contrib-watch": "^1.1.0",
-    "q": "^1.5.1"
+    "grunt-contrib-watch": "^1.1.0"
   },
   "dependencies": {
     "jszip": "3.4.0",
-    "lodash": "^4.17.15"
+    "lodash": "^4.17.15",
+    "q": "^1.5.1"
   },
   "browserify-shim": {
     "lodash": "global:_",
