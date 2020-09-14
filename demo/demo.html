@@ -4,14 +4,14 @@
 
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
-        <script type="text/javascript" src="../dist/excel-builder.dist.js"></script>
+        <script type="text/javascript" src="../dist/index.js"></script>
         <script type="text/javascript" src="downloadify/js/swfobject.js"></script>
         <script type="text/javascript" src="downloadify/js/downloadify.min.js"></script>
     </head>
     <body>
-        
+
         <pre id="preview"><a href="#" id="downloader" download="sample.xlsx">Click me!</a></pre>
-        
+
         <script type="text/javascript">
             $.get('./testdata.json').then(function (data) {
 //                var stuff = [];
@@ -150,6 +150,6 @@
                 });
             });
         </script>
-        
+
     </body>
 </html>
