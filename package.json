@@ -27,7 +27,7 @@
   },
   "homepage": "http://excelbuilderjs.com/",
   "devDependencies": {
-    "@vercel/ncc": "^0.24.0"
+    "@vercel/ncc": "^0.23.0"
   },
   "dependencies": {
     "jszip": "3.4.0",
