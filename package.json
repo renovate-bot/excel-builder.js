@@ -21,7 +21,7 @@
     "spreadsheet"
   ],
   "author": "Stephen Liberty",
-  "license": "GPLv3",
+  "license": "(MIT OR GPLv3)",
   "bugs": {
     "url": "https://github.com/hohiep102/excel-builder.js/issues"
   },
