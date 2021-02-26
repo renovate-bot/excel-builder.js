@@ -1,678 +1,84 @@
 module.exports =
-/******/ (function(modules, runtime) { // webpackBootstrap
+/******/ (function() { // webpackBootstrap
 /******/ 	"use strict";
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		var threw = true;
-/******/ 		try {
-/******/ 			modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/ 			threw = false;
-/******/ 		} finally {
-/******/ 			if(threw) delete installedModules[moduleId];
-/******/ 		}
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	__webpack_require__.ab = __dirname + "/";
-/******/
-/******/ 	// the startup function
-/******/ 	function startup() {
-/******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(351);
-/******/ 	};
-/******/
-/******/ 	// run startup
-/******/ 	return startup();
-/******/ })
-/************************************************************************/
-/******/ ({
+/******/ 	var __webpack_modules__ = ({
 
-/***/ 20:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 183:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-var RelationshipManager = __webpack_require__(785);
-var SheetView = __webpack_require__(958);
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
 
 /**
- * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is
- * to hold data, the data's link to how it should be styled, and any links to other outside resources.
  *
- * @module Excel/Worksheet
+ * @param {Object} config
+ * @param {Number} config.x X offset in EMU's
+ * @param {Number} config.y Y offset in EMU's
+ * @param {Number} config.width Width in EMU's
+ * @param {Number} config.height Height in EMU's
+ * @constructor
  */
-    var Worksheet = function (config) {
-        this.relations = null;
-        this.columnFormats = [];
-        this.data = [];
-        this.mergedCells = [];
-        this.columns = [];
-        this.sheetProtection = false;
-        this._headers = [];
-        this._footers = [];
-        this._tables = [];
-        this._drawings = [];
-        this._rowInstructions = {};
-        this._freezePane = {};
+var AbsoluteAnchor = function (config) {
+    this.x = null;
+    this.y = null;
+    this.width = null;
+    this.height = null;
+    if(config) {
+        this.setPos(config.x, config.y);
+        this.setDimensions(config.width, config.height);
+    }
+};
+_.extend(AbsoluteAnchor.prototype, {
+    /**
+     * Sets the X and Y offsets.
+     *
+     * @param {Number} x
+     * @param {Number} y
+     * @returns {undefined}
+     */
+    setPos: function (x, y) {
+        this.x = x;
+        this.y = y;
+    },
+    /**
+     * Sets the width and height of the image.
+     *
+     * @param {Number} width
+     * @param {Number} height
+     * @returns {undefined}
+     */
+    setDimensions: function (width, height) {
+        this.width = width;
+        this.height = height;
+    },
+    toXML: function (xmlDoc, content) {
+        var root = util.createElement(xmlDoc, 'xdr:absoluteAnchor');
+        var pos = util.createElement(xmlDoc, 'xdr:pos');
+        pos.setAttribute('x', this.x);
+        pos.setAttribute('y', this.y);
+        root.appendChild(pos);
 
-        this.hyperlinks = [];
-        this.sheetView = config.sheetView || new SheetView();
+        var dimensions = util.createElement(xmlDoc, 'xdr:ext');
+        dimensions.setAttribute('cx', this.width);
+        dimensions.setAttribute('cy', this.height);
+        root.appendChild(dimensions);
 
-        this.showZeros = null;
-        this.initialize(config);
-    };
-    _.extend(Worksheet.prototype, {
+        root.appendChild(content);
 
-        initialize: function (config) {
-            config = config || {};
-            this.name = config.name;
-            this.id = _.uniqueId('Worksheet');
-            this._timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
-            if(config.columns) {
-                this.setColumns(config.columns);
-            }
-
-            this.relations = new RelationshipManager();
-        },
-
-        /**
-         * Returns an object that can be consumed by a WorksheetExportWorker
-         * @returns {Object}
-         */
-        exportData: function () {
-            return {
-                relations: this.relations.exportData(),
-                columnFormats: this.columnFormats,
-                data: this.data,
-                columns: this.columns,
-                mergedCells: this.mergedCells,
-                _headers: this._headers,
-                _footers: this._footers,
-                _tables: this._tables,
-                _rowInstructions: this._rowInstructions,
-                _freezePane: this._freezePane,
-                name: this.name,
-                id: this.id
-            };
-        },
-
-        /**
-         * Imports data - to be used while inside of a WorksheetExportWorker.
-         * @param {Object} data
-         */
-        importData: function (data) {
-            this.relations.importData(data.relations);
-            delete data.relations;
-            _.extend(this, data);
-        },
-
-        setSharedStringCollection: function (stringCollection) {
-            this.sharedStrings = stringCollection;
-        },
-
-        addTable: function (table) {
-            this._tables.push(table);
-            this.relations.addRelation(table, 'table');
-        },
-
-        addDrawings: function (table) {
-            this._drawings.push(table);
-            this.relations.addRelation(table, 'drawingRelationship');
-        },
-
-        setRowInstructions: function (rowIndex, instructions) {
-            this._rowInstructions[rowIndex] = instructions;
-        },
-
-        /**
-        * Expects an array length of three.
-        *
-        * @see Excel/Worksheet compilePageDetailPiece
-        * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        *
-        * @param {Array} headers [left, center, right]
-        */
-        setHeader: function (headers) {
-            if(!_.isArray(headers)) {
-                throw "Invalid argument type - setHeader expects an array of three instructions";
-            }
-            this._headers = headers;
-        },
-
-        /**
-        * Expects an array length of three.
-        *
-        * @see Excel/Worksheet compilePageDetailPiece
-        * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
-        *
-        * @param {Array} footers [left, center, right]
-        */
-        setFooter: function (footers) {
-            if(!_.isArray(footers)) {
-                throw "Invalid argument type - setFooter expects an array of three instructions";
-            }
-            this._footers = footers;
-        },
-
-        /**
-         * Turns page header/footer details into the proper format for Excel.
-         * @param {type} data
-         * @returns {String}
-         */
-        compilePageDetailPackage: function (data) {
-            data = data || "";
-            return [
-            "&L", this.compilePageDetailPiece(data[0] || ""),
-            "&C", this.compilePageDetailPiece(data[1] || ""),
-            "&R", this.compilePageDetailPiece(data[2] || "")
-            ].join('');
-        },
-
-        /**
-         * Turns instructions on page header/footer details into something
-         * usable by Excel.
-         *
-         * @param {type} data
-         * @returns {String|@exp;_@call;reduce}
-         */
-        compilePageDetailPiece: function (data) {
-            if(_.isString(data)) {
-                return '&"-,Regular"'.concat(data);
-            }
-            if(_.isObject(data) && !_.isArray(data)) {
-                var string = "";
-                if(data.font || data.bold) {
-                    var weighting = data.bold ? "Bold" : "Regular";
-                    string += '&"' + (data.font || '-');
-                    string += ',' + weighting + '"';
-                } else {
-                    string += '&"-,Regular"';
-                }
-                if(data.underline) {
-                    string += "&U";
-                }
-                if(data.fontSize) {
-                    string += "&"+data.fontSize;
-                }
-                string += data.text;
-
-                return string;
-            }
-
-            if(_.isArray(data)) {
-                var self = this;
-                return _.reduce(data, function (m, v) {
-                    return m.concat(self.compilePageDetailPiece(v));
-                }, "");
-            }
-        },
-
-        /**
-         * Creates the header node.
-         *
-         * @todo implement the ability to do even/odd headers
-         * @param {XML Doc} doc
-         * @returns {XML Node}
-         */
-        exportHeader: function (doc) {
-            var oddHeader = doc.createElement('oddHeader');
-            oddHeader.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._headers)));
-            return oddHeader;
-        },
-
-        /**
-         * Creates the footer node.
-         *
-         * @todo implement the ability to do even/odd footers
-         * @param {XML Doc} doc
-         * @returns {XML Node}
-         */
-        exportFooter: function (doc) {
-            var oddFooter = doc.createElement('oddFooter');
-            oddFooter.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._footers)));
-            return oddFooter;
-        },
-
-        /**
-         * This creates some nodes ahead of time, which cuts down on generation time due to
-         * most cell definitions being essentially the same, but having multiple nodes that need
-         * to be created. Cloning takes less time than creation.
-         *
-         * @private
-         * @param {XML Doc} doc
-         * @returns {_L8.Anonym$0._buildCache.Anonym$2}
-         */
-        _buildCache: function (doc) {
-            var numberNode = doc.createElement('c');
-            var value = doc.createElement('v');
-            value.appendChild(doc.createTextNode("--temp--"));
-            numberNode.appendChild(value);
-
-            var formulaNode = doc.createElement('c');
-            var formulaValue = doc.createElement('f');
-            formulaValue.appendChild(doc.createTextNode("--temp--"));
-            formulaNode.appendChild(formulaValue);
-
-            var stringNode = doc.createElement('c');
-            stringNode.setAttribute('t', 's');
-            var stringValue = doc.createElement('v');
-            stringValue.appendChild(doc.createTextNode("--temp--"));
-            stringNode.appendChild(stringValue);
-
-
-            return {
-                number: numberNode,
-                date: numberNode,
-                string: stringNode,
-                formula: formulaNode
-            };
-        },
-
-        /**
-         * Runs through the XML document and grabs all of the strings that will
-         * be sent to the 'shared strings' document.
-         *
-         * @returns {Array}
-         */
-        collectSharedStrings: function () {
-            var data = this.data;
-            var maxX = 0;
-            var strings = {};
-            for(var row = 0, l = data.length; row < l; row++) {
-                var dataRow = data[row];
-                var cellCount = dataRow.length;
-                maxX = cellCount > maxX ? cellCount : maxX;
-                for(var c = 0; c < cellCount; c++) {
-                    var cellValue = dataRow[c];
-                    var metadata = cellValue && cellValue.metadata || {};
-                    if (cellValue && typeof cellValue === 'object') {
-                        cellValue = cellValue.value;
-                    }
-
-                    if(!metadata.type) {
-                        if(typeof cellValue === 'number') {
-                            metadata.type = 'number';
-                        }
-                    }
-                    if(metadata.type === "text" || !metadata.type) {
-                        if(typeof strings[cellValue] === 'undefined') {
-                            strings[cellValue] = true;
-                        }
-                    }
-                }
-            }
-            return _.keys(strings);
-        },
-
-        toXML: function () {
-            var data = this.data;
-            var columns = this.columns || [];
-            var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'worksheet');
-            var worksheet = doc.documentElement;
-            var i, l, row;
-            worksheet.setAttribute('xmlns:r', util.schemas.relationships);
-            worksheet.setAttribute('xmlns:mc', util.schemas.markupCompat);
-
-            var maxX = 0;
-            var sheetData = util.createElement(doc, 'sheetData');
-
-            var cellCache = this._buildCache(doc);
-
-            for(row = 0, l = data.length; row < l; row++) {
-                var dataRow = data[row];
-                var cellCount = dataRow.length;
-                maxX = cellCount > maxX ? cellCount : maxX;
-                var rowNode = doc.createElement('row');
-
-                for(var c = 0; c < cellCount; c++) {
-                    columns[c] = columns[c] || {};
-                    var cellValue = dataRow[c];
-                    var cell, metadata = cellValue && cellValue.metadata || {};
-
-                    if (cellValue && typeof cellValue === 'object') {
-                        cellValue = cellValue.value;
-                    }
-
-                    if(!metadata.type) {
-                        if(typeof cellValue === 'number') {
-                            metadata.type = 'number';
-                        }
-                    }
-
-                    switch(metadata.type) {
-                        case "number":
-                            cell = cellCache.number.cloneNode(true);
-                            cell.firstChild.firstChild.nodeValue = cellValue;
-                            break;
-                        case "date":
-                            cell = cellCache.date.cloneNode(true);
-                            cell.firstChild.firstChild.nodeValue = 25569.0 + ((cellValue - this._timezoneOffset)  / (60 * 60 * 24 * 1000));
-                            break;
-                        case "formula":
-                            cell = cellCache.formula.cloneNode(true);
-                            cell.firstChild.firstChild.nodeValue = cellValue;
-                            break;
-                        case "text":
-                            /*falls through*/
-                        default:
-                            var id;
-                            if(typeof this.sharedStrings.strings[cellValue] !== 'undefined') {
-                                id = this.sharedStrings.strings[cellValue];
-                            } else {
-                                id = this.sharedStrings.addString(cellValue);
-                            }
-                            cell = cellCache.string.cloneNode(true);
-                            cell.firstChild.firstChild.nodeValue = id;
-                            break;
-                    }
-                    if(metadata.style) {
-                        cell.setAttribute('s', metadata.style);
-                    } else if (this._rowInstructions[row] && this._rowInstructions[row].style !== undefined) {
-                        cell.setAttribute('s', this._rowInstructions[row].style);
-                    }
-                    cell.setAttribute('r', util.positionToLetterRef(c + 1, row + 1));
-                    rowNode.appendChild(cell);
-                }
-                rowNode.setAttribute('r', row + 1);
-
-                if (this._rowInstructions[row]) {
-                    var rowInst = this._rowInstructions[row];
-
-                    if (rowInst.height !== undefined) {
-                        rowNode.setAttribute('customHeight', '1');
-                        rowNode.setAttribute('ht', rowInst.height);
-                    }
-
-                    if (rowInst.style !== undefined) {
-                      rowNode.setAttribute('customFormat', '1');
-                      rowNode.setAttribute('s', rowInst.style);
-                    }
-                }
-
-                sheetData.appendChild(rowNode);
-            }
-
-            if(maxX !== 0) {
-                worksheet.appendChild(util.createElement(doc, 'dimension', [
-                    ['ref',  util.positionToLetterRef(1, 1) + ':' + util.positionToLetterRef(maxX, data.length)]
-                ]));
-            } else {
-                worksheet.appendChild(util.createElement(doc, 'dimension', [
-                    ['ref',  util.positionToLetterRef(1, 1)]
-                ]));
-            }
-
-            worksheet.appendChild(this.sheetView.exportXML(doc));
-
-            if(this.columns.length) {
-                worksheet.appendChild(this.exportColumns(doc));
-            }
-            worksheet.appendChild(sheetData);
-
-            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData
-            if (this.sheetProtection) {
-                worksheet.appendChild(this.sheetProtection.exportXML(doc));
-            }
-
-            /**
-             * Doing this a bit differently, as hyperlinks could be as populous as rows. Looping twice would be bad.
-             */
-            if(this.hyperlinks.length > 0) {
-                var hyperlinksEl = doc.createElement('hyperlinks');
-                var hyperlinks = this.hyperlinks;
-                for( i = 0, l = hyperlinks.length; i < l; i++) {
-                    var hyperlinkEl = doc.createElement('hyperlink'),
-                        hyperlink = hyperlinks[i];
-                    hyperlinkEl.setAttribute('ref', hyperlink.cell);
-                    hyperlink.id = util.uniqueId('hyperlink');
-                    this.relations.addRelation({
-                        id: hyperlink.id,
-                        target: hyperlink.location,
-                        targetMode: hyperlink.targetMode || 'External'
-                    }, 'hyperlink');
-                    hyperlinkEl.setAttribute('r:id', this.relations.getRelationshipId(hyperlink));
-                    hyperlinksEl.appendChild(hyperlinkEl);
-                }
-                worksheet.appendChild(hyperlinksEl);
-            }
-
-            // 'mergeCells' should be written before 'headerFoot' and 'drawing' due to issue
-            // with Microsoft Excel (2007, 2013)
-            if (this.mergedCells.length > 0) {
-                var mergeCells = doc.createElement('mergeCells');
-                for (i = 0, l = this.mergedCells.length; i < l; i++) {
-                    var mergeCell = doc.createElement('mergeCell');
-                    mergeCell.setAttribute('ref', this.mergedCells[i][0] + ':' + this.mergedCells[i][1]);
-                    mergeCells.appendChild(mergeCell);
-                }
-                worksheet.appendChild(mergeCells);
-            }
-
-            this.exportPageSettings(doc, worksheet);
-
-            if(this._headers.length > 0 || this._footers.length > 0) {
-                var headerFooter = doc.createElement('headerFooter');
-                if(this._headers.length > 0) {
-                    headerFooter.appendChild(this.exportHeader(doc));
-                }
-                if(this._footers.length > 0) {
-                    headerFooter.appendChild(this.exportFooter(doc));
-                }
-                worksheet.appendChild(headerFooter);
-            }
-
-            // the 'drawing' element should be written last, after 'headerFooter', 'mergeCells', etc. due
-            // to issue with Microsoft Excel (2007, 2013)
-            for(i = 0, l = this._drawings.length; i < l; i++) {
-                var drawing = doc.createElement('drawing');
-                drawing.setAttribute('r:id', this.relations.getRelationshipId(this._drawings[i]));
-                worksheet.appendChild(drawing);
-            }
-
-            if(this._tables.length > 0) {
-                var tables = doc.createElement('tableParts');
-                tables.setAttribute('count', this._tables.length);
-                for(i = 0, l = this._tables.length; i < l; i++) {
-                    var table = doc.createElement('tablePart');
-                    table.setAttribute('r:id', this.relations.getRelationshipId(this._tables[i]));
-                    tables.appendChild(table);
-                }
-                worksheet.appendChild(tables);
-            }
-            return doc;
-        },
-
-        /**
-         *
-         * @param {XML Doc} doc
-         * @returns {XML Node}
-         */
-        exportColumns: function (doc) {
-            var cols = util.createElement(doc, 'cols');
-            for(var i = 0, l = this.columns.length; i < l; i++) {
-                var cd = this.columns[i];
-                var col = util.createElement(doc, 'col', [
-                    ['min', cd.min || i + 1],
-                    ['max', cd.max || i + 1]
-                ]);
-                if (cd.hidden) {
-                    col.setAttribute('hidden', 1);
-                }
-                if(cd.bestFit) {
-                    col.setAttribute('bestFit', 1);
-                }
-                if(cd.customWidth || cd.width) {
-                    col.setAttribute('customWidth', 1);
-                }
-                if(cd.width) {
-                    col.setAttribute('width', cd.width);
-                } else {
-                    col.setAttribute('width', 9.140625);
-                }
-
-                cols.appendChild(col);
-            }
-            return cols;
-        },
-
-        /**
-         * Sets the page settings on a worksheet node.
-         *
-         * @param {XML Doc} doc
-         * @param {XML Node} worksheet
-         * @returns {undefined}
-         */
-        exportPageSettings: function (doc, worksheet) {
-            if(this._margin) {
-            	var defaultVal = 0.7;
-            	var left = this._margin.left?this._margin.left:defaultVal;
-            	var right = this._margin.right?this._margin.right:defaultVal;
-            	var top = this._margin.top?this._margin.top:defaultVal;
-            	var bottom = this._margin.bottom?this._margin.bottom:defaultVal;
-            	defaultVal = 0.3;
-            	var header = this._margin.header?this._margin.header:defaultVal;
-            	var footer = this._margin.footer?this._margin.footer:defaultVal;
-
-            	worksheet.appendChild(util.createElement(doc, 'pageMargins', [
-                    ['top', top],
-                    ['bottom', bottom],
-                    ['left', left],
-                    ['right', right],
-                    ['header', header],
-                    ['footer', footer]
-                ]));
-            }
-            if(this._orientation) {
-                worksheet.appendChild(util.createElement(doc, 'pageSetup', [
-                    ['orientation', this._orientation]
-                ]));
-            }
-        },
-
-        /**
-         * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
-         *
-         * Can be one of 'portrait' or 'landscape'.
-         *
-         * @param {String} orientation
-         * @returns {undefined}
-         */
-        setPageOrientation: function (orientation) {
-            this._orientation = orientation;
-        },
-
-        /**
-         * Set page details in inches.
-         * use this structure:
-         * {
-         *   top: 0.7
-         *   , bottom: 0.7
-         *   , left: 0.7
-         *   , right: 0.7
-         *   , header: 0.3
-         *   , footer: 0.3
-         * }
-         *
-         * @returns {undefined}
-         */
-        setPageMargin: function (input) {
-        	this._margin = input;
-        },
-
-        /**
-         * Expects an array of column definitions. Each column definition needs to have a width assigned to it.
-         *
-         * @param {Array} columns
-         */
-        setColumns: function (columns) {
-            this.columns = columns;
-        },
-
-        /**
-         * Expects an array of data to be translated into cells.
-         *
-         * @param {Array} data Two dimensional array - [ [A1, A2], [B1, B2] ]
-         * @see <a href='/cookbook/addingDataToAWorksheet.html'>Adding data to a worksheet</a>
-         */
-        setData: function (data) {
-            this.data = data;
-        },
-
-        /**
-         * Merge cells in given range
-         *
-         * @param cell1 - A1, A2...
-         * @param cell2 - A2, A3...
-         */
-        mergeCells: function(cell1, cell2) {
-            this.mergedCells.push([cell1, cell2]);
-        },
-
-        /**
-         * Added froze pane
-         * @param column - column number: 0, 1, 2 ...
-         * @param row - row number: 0, 1, 2 ...
-         * @param cell - 'A1'
-         * @deprecated
-         */
-        freezePane: function(column, row, cell) {
-            this.sheetView.freezePane(column, row, cell);
-        },
-
-        /**
-         * Expects an array containing an object full of column format definitions.
-         * http://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.column.aspx
-         * bestFit
-         * collapsed
-         * customWidth
-         * hidden
-         * max
-         * min
-         * outlineLevel
-         * phonetic
-         * style
-         * width
-         * @param {Array} columnFormats
-         */
-        setColumnFormats: function (columnFormats) {
-            this.columnFormats = columnFormats;
-        }
-    });
-    module.exports = Worksheet;
-
+        root.appendChild(util.createElement(xmlDoc, 'xdr:clientData'));
+        return root;
+    }
+});
+module.exports = AbsoluteAnchor;
 
 /***/ }),
 
 /***/ 75:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
+var _ = __nccwpck_require__(804);
 //var util = require('../util');
 var Chart = function () {
 
@@ -684,26 +90,89 @@ module.exports = Chart;
 
 /***/ }),
 
-/***/ 133:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 982:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-module.exports = {
-    BasicReport: __webpack_require__(450)
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+
+/**
+ *
+ * @param {Object} config
+ * @param {Number} config.x The cell column number that the top left of the picture will start in
+ * @param {Number} config.y The cell row number that the top left of the picture will start in
+ * @param {Number} config.width Width in EMU's
+ * @param {Number} config.height Height in EMU's
+ * @constructor
+ */
+var OneCellAnchor = function (config) {
+    this.x = null;
+    this.y = null;
+    this.xOff = null;
+    this.yOff = null;
+    this.width = null;
+    this.height = null;
+    if(config) {
+        this.setPos(config.x, config.y, config.xOff, config.yOff);
+        this.setDimensions(config.width, config.height);
+    }
 };
+_.extend(OneCellAnchor.prototype, {
+    setPos: function (x, y, xOff, yOff) {
+        this.x = x;
+        this.y = y;
+        if(xOff !== undefined) {
+            this.xOff = xOff;
+        }
+        if(yOff !== undefined) {
+            this.yOff = yOff;
+        }
+    },
+    setDimensions: function (width, height) {
+        this.width = width;
+        this.height = height;
+    },
+    toXML: function (xmlDoc, content) {
+        var root = util.createElement(xmlDoc, 'xdr:oneCellAnchor');
+        var from = util.createElement(xmlDoc, 'xdr:from');
+        var fromCol = util.createElement(xmlDoc, 'xdr:col');
+        fromCol.appendChild(xmlDoc.createTextNode(this.x));
+        var fromColOff = util.createElement(xmlDoc, 'xdr:colOff');
+        fromColOff.appendChild(xmlDoc.createTextNode(this.xOff || 0));
+        var fromRow = util.createElement(xmlDoc, 'xdr:row');
+        fromRow.appendChild(xmlDoc.createTextNode(this.y));
+        var fromRowOff = util.createElement(xmlDoc, 'xdr:rowOff');
+        fromRowOff.appendChild(xmlDoc.createTextNode(this.yOff || 0));
+        from.appendChild(fromCol);
+        from.appendChild(fromColOff);
+        from.appendChild(fromRow);
+        from.appendChild(fromRowOff);
 
+        root.appendChild(from);
+
+        var dimensions = util.createElement(xmlDoc, 'xdr:ext');
+        dimensions.setAttribute('cx', this.width);
+        dimensions.setAttribute('cy', this.height);
+        root.appendChild(dimensions);
+
+        root.appendChild(content);
+
+        root.appendChild(util.createElement(xmlDoc, 'xdr:clientData'));
+        return root;
+    }
+});
+module.exports = OneCellAnchor;
 
 /***/ }),
 
 /***/ 147:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-var Drawing = __webpack_require__(890);
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+var Drawing = __nccwpck_require__(890);
 
 var Picture = function () {
     this.media = null;
@@ -810,666 +279,12 @@ module.exports = Picture;
 
 /***/ }),
 
-/***/ 183:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-
-/**
- *
- * @param {Object} config
- * @param {Number} config.x X offset in EMU's
- * @param {Number} config.y Y offset in EMU's
- * @param {Number} config.width Width in EMU's
- * @param {Number} config.height Height in EMU's
- * @constructor
- */
-var AbsoluteAnchor = function (config) {
-    this.x = null;
-    this.y = null;
-    this.width = null;
-    this.height = null;
-    if(config) {
-        this.setPos(config.x, config.y);
-        this.setDimensions(config.width, config.height);
-    }
-};
-_.extend(AbsoluteAnchor.prototype, {
-    /**
-     * Sets the X and Y offsets.
-     *
-     * @param {Number} x
-     * @param {Number} y
-     * @returns {undefined}
-     */
-    setPos: function (x, y) {
-        this.x = x;
-        this.y = y;
-    },
-    /**
-     * Sets the width and height of the image.
-     *
-     * @param {Number} width
-     * @param {Number} height
-     * @returns {undefined}
-     */
-    setDimensions: function (width, height) {
-        this.width = width;
-        this.height = height;
-    },
-    toXML: function (xmlDoc, content) {
-        var root = util.createElement(xmlDoc, 'xdr:absoluteAnchor');
-        var pos = util.createElement(xmlDoc, 'xdr:pos');
-        pos.setAttribute('x', this.x);
-        pos.setAttribute('y', this.y);
-        root.appendChild(pos);
-
-        var dimensions = util.createElement(xmlDoc, 'xdr:ext');
-        dimensions.setAttribute('cx', this.width);
-        dimensions.setAttribute('cy', this.height);
-        root.appendChild(dimensions);
-
-        root.appendChild(content);
-
-        root.appendChild(util.createElement(xmlDoc, 'xdr:clientData'));
-        return root;
-    }
-});
-module.exports = AbsoluteAnchor;
-
-/***/ }),
-
-/***/ 255:
-/***/ (function(module) {
-
-"use strict";
-
-/**
- * This is mostly a global spot where all of the relationship managers can get and set
- * path information from/to.
- * @module Excel/Paths
- */
-module.exports = {};
-
-
-/***/ }),
-
-/***/ 328:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var XMLDOM = __webpack_require__(543);
-var _ = __webpack_require__(804);
-/**
- * @module Excel/util
- */
-
-var util = {
-
-    _idSpaces: {},
-
-    /**
-     * Returns a number based on a namespace. So, running with 'Picture' will return 1. Run again, you will get 2. Run with 'Foo', you'll get 1.
-     * @param {String} space
-     * @returns {Number}
-     */
-    uniqueId: function (space) {
-        if(!this._idSpaces[space]) {
-            this._idSpaces[space] = 1;
-        }
-        return this._idSpaces[space]++;
-    },
-
-    /**
-     * Attempts to create an XML document. After some investigation, using the 'fake' document
-     * is significantly faster than creating an actual XML document, so we're going to go with
-     * that. Besides, it just makes it easier to port to node.
-     *
-     * Takes a namespace to start the xml file in, as well as the root element
-     * of the xml file.
-     *
-     * @param {type} ns
-     * @param {type} base
-     * @returns {@new;XMLDOM}
-     */
-    createXmlDoc: function (ns, base) {
-        return new XMLDOM(ns || null, base, null);
-    },
-
-    /**
-     * Creates an xml node (element). Used to simplify some calls, as IE is
-     * very particular about namespaces and such.
-     *
-     * @param {XMLDOM} doc An xml document (actual DOM or fake DOM, not a string)
-     * @param {type} name The name of the element
-     * @param {type} attributes
-     * @returns {XML Node}
-     */
-    createElement: function (doc, name, attributes) {
-        var el = doc.createElement(name);
-        attributes = attributes || [];
-        var i = attributes.length;
-        while (i--) {
-            el.setAttribute(attributes[i][0], attributes[i][1]);
-        }
-        return el;
-    },
-
-    /**
-     * This is sort of slow, but it's a huge convenience method for the code. It probably shouldn't be used
-     * in high repetition areas.
-     *
-     * @param {XMLDoc} doc
-     * @param {Object} attrs
-     */
-    setAttributesOnDoc: function (doc, attrs) {
-        _.forEach(attrs, function (v, k) {
-            if(_.isPlainObject(v)) {
-                if(v.v !== null && v.v !== undefined) {
-                    switch(v.type) {
-                        case Boolean:
-                            v = v.v ? '1' : '0';
-                            break;
-                    }
-                } else {
-                    v = null;
-                }
-            }
-            if(v !== null && v !== undefined) {
-                doc.setAttribute(k, v);
-            }
-        });
-    },
-
-    LETTER_REFS: {},
-
-    positionToLetterRef: function (x, y) {
-        var digit = 1, index, num = x, string = "", alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        if(this.LETTER_REFS[x]) {
-            return this.LETTER_REFS[x].concat(y);
-        }
-        while (num > 0) {
-            num -= Math.pow(26, digit -1);
-            index = num % Math.pow(26, digit);
-            num -= index;
-            index = index / Math.pow(26, digit - 1);
-            string = alphabet.charAt(index) + string;
-            digit += 1;
-        }
-        this.LETTER_REFS[x] = string;
-        return string.concat(y);
-    },
-
-    schemas: {
-        'worksheet': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet',
-        'sharedStrings': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
-        'stylesheet': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
-        'relationships': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-        'relationshipPackage': "http://schemas.openxmlformats.org/package/2006/relationships",
-        'contentTypes': "http://schemas.openxmlformats.org/package/2006/content-types",
-        'spreadsheetml': "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
-        'markupCompat': "http://schemas.openxmlformats.org/markup-compatibility/2006",
-        'x14ac': "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac",
-        'officeDocument': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-        'package': "http://schemas.openxmlformats.org/package/2006/relationships",
-        'table': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
-        'spreadsheetDrawing': 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
-        'drawing': 'http://schemas.openxmlformats.org/drawingml/2006/main',
-        'drawingRelationship': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing',
-        'image': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
-        'chart': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
-        'hyperlink': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
-    }
-};
-
-module.exports = util;
-
-
-/***/ }),
-
-/***/ 349:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-
-
-/**
- * @module Excel/SharedStrings
- */
-var sharedStrings = function () {
-    this.strings = {};
-    this.stringArray = [];
-    this.id = _.uniqueId('SharedStrings');
-};
-_.extend(sharedStrings.prototype, {
-    /**
-     * Adds a string to the shared string file, and returns the ID of the
-     * string which can be used to reference it in worksheets.
-     *
-     * @param string {String}
-     * @return int
-     */
-    addString: function (string) {
-        this.strings[string] = this.stringArray.length;
-        this.stringArray[this.stringArray.length] = string;
-        return this.strings[string];
-    },
-
-    exportData: function () {
-        return this.strings;
-    },
-
-    toXML: function () {
-        var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'sst');
-        var sharedStringTable = doc.documentElement;
-        this.stringArray.reverse();
-        var l = this.stringArray.length;
-        sharedStringTable.setAttribute('count', l);
-        sharedStringTable.setAttribute('uniqueCount', l);
-
-        var template = doc.createElement('si');
-        var templateValue = doc.createElement('t');
-        templateValue.appendChild(doc.createTextNode('--placeholder--'));
-        template.appendChild(templateValue);
-        var strings = this.stringArray;
-
-        while (l--) {
-            var clone = template.cloneNode(true);
-            clone.firstChild.firstChild.nodeValue = strings[l];
-            sharedStringTable.appendChild(clone);
-        }
-
-        return doc;
-    }
-});
-module.exports = sharedStrings;
-
-/***/ }),
-
-/***/ 351:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-var EBExport = module.exports = {
-    Drawings: __webpack_require__(861),
-    Drawing: __webpack_require__(890),
-    Pane: __webpack_require__(753),
-    Paths: __webpack_require__(255),
-    Positioning: __webpack_require__(864),
-    RelationshipManager: __webpack_require__(785),
-    SharedStrings: __webpack_require__(349),
-    SheetView: __webpack_require__(958),
-    StyleSheet: __webpack_require__(747),
-    Table: __webpack_require__(496),
-    util: __webpack_require__(328),
-    Workbook: __webpack_require__(952),
-    Worksheet: __webpack_require__(20),
-    XMLDOM: __webpack_require__(543),
-    Builder: __webpack_require__(396),
-    Template: __webpack_require__(133)
-};
-
-try {
-    if(typeof window !== 'undefined') {
-        window.ExcelBuilder = EBExport;
-    }
-} catch (e) {
-    //Silently ignore?
-    console.info("Not attaching EB to window");
-}
-
-
-/***/ }),
-
-/***/ 395:
-/***/ (function(module) {
-
-module.exports = require("jszip");
-
-/***/ }),
-
-/***/ 396:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var Workbook = __webpack_require__(952);
-var JSZip = __webpack_require__(395);
-//var WorkbookWorker = require('./Worker');
-
-/**
- * @name Excel
- * @public
- * @author Stephen Liberty
- * @requires underscore
- * @requires Excel/Workbook
- * @requires JSZIP
- * @exports excel-builder
- */
-var Factory = {
-    /**
-     * Creates a new workbook.
-     */
-    createWorkbook: function () {
-        return new Workbook();
-    },
-
-    config: {
-        forceUIThread: false
-    },
-
-    /**
-     * Turns a workbook into a downloadable file.
-     * @param {Excel/Workbook} workbook The workbook that is being converted
-     * @param {Object} options - options to modify how the zip is created. See http://stuk.github.io/jszip/#doc_generate_options
-     * @returns {Promise}
-     */
-    createFile: function (workbook, options) {
-        var zip = new JSZip();
-        return workbook.generateFiles().then(function (files) {
-            _.each(files, function (content, path) {
-                path = path.substr(1);
-                if(path.indexOf('.xml') !== -1 || path.indexOf('.rel') !== -1) {
-                    zip.file(path, content, {base64: false});
-                } else {
-                    zip.file(path, content, {base64: true, binary: true});
-                }
-            });
-            return zip.generateAsync(_.defaults(options || {}, {
-                type: "base64"
-            }));
-        });
-    }
-};
-
-
-module.exports = Factory;
-
-
-/***/ }),
-
-/***/ 434:
-/***/ (function(module) {
-
-module.exports = require("q");
-
-/***/ }),
-
-/***/ 450:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-var Workbook = __webpack_require__(952);
-var Table = __webpack_require__(496);
-var _ = __webpack_require__(804);
-
-var Template = function (worksheetConstructorSettings) {
-    this.workbook = new Workbook();
-    this.stylesheet = this.workbook.getStyleSheet();
-
-    this.columns = {};
-
-    this.predefinedStyles = {
-
-    };
-
-    this.predefinedFormatters = {
-        date: this.stylesheet.createSimpleFormatter('date'),
-        currency: this.stylesheet.createFormat({format: "$ #,##0.00;$ #,##0.00;-", font: {color: "FFE9F50A"}}),
-        header: this.stylesheet.createFormat({
-            font: { bold: true, underline: true, color: {theme: 3}},
-            alignment: {horizontal: 'center'}
-        })
-    };
-
-    if(worksheetConstructorSettings != null) {
-        this.worksheet = this.workbook.createWorksheet(worksheetConstructorSettings);
-    }
-    else {
-        this.worksheet = this.workbook.createWorksheet();
-    }
-    this.workbook.addWorksheet(this.worksheet);
-    this.worksheet.setPageOrientation('landscape');
-    this.table = new Table();
-    this.table.styleInfo.themeStyle = "TableStyleLight1";
-    this.worksheet.addTable(this.table);
-    this.workbook.addTable(this.table);
-};
-
-_.extend(Template.prototype, {
-    setHeader: function () {
-        this.worksheet.setHeader.apply(this.worksheet, arguments);
-    },
-    setFooter: function () {
-        this.worksheet.setFooter.apply(this.worksheet, arguments);
-    },
-    prepare: function () {
-        return this.workbook;
-    },
-
-    setData: function (worksheetData) {
-        this.worksheet.setData(worksheetData);
-        this.data = worksheetData;
-        this.table.setReferenceRange([1, 1], [this.columns.length, worksheetData.length]);
-    },
-
-    setColumns: function (columns) {
-        this.columns = columns;
-        this.worksheet.setColumns(columns);
-        this.table.setTableColumns(columns);
-        this.table.setReferenceRange([1, 1], [this.columns.length, this.data.length]);
-    },
-
-    getWorksheet: function () {
-        return this.worksheet;
-    }
-});
-
-module.exports = Template;
-
-
-/***/ }),
-
-/***/ 496:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-
-/**
- * @module Excel/Table
- */
-
-var Table = function (config) {
-    _.defaults(this, {
-        name: "",
-        displayName: "",
-        dataCellStyle: null,
-        dataDfxId: null,
-        headerRowBorderDxfId: null,
-        headerRowCellStyle: null,
-        headerRowCount: 1,
-        headerRowDxfId: null,
-        insertRow: false,
-        insertRowShift: false,
-        ref: null,
-        tableBorderDxfId: null,
-        totalsRowBorderDxfId: null,
-        totalsRowCellStyle: null,
-        totalsRowCount: 0,
-        totalsRowDxfId: null,
-        tableColumns: [],
-        autoFilter: null,
-        sortState: null,
-        styleInfo: {}
-    });
-    this.initialize(config);
-};
-_.extend(Table.prototype, {
-
-    initialize: function (config) {
-        this.displayName = _.uniqueId("Table");
-        this.name = this.displayName;
-        this.id = this.name;
-        this.tableId = this.id.replace('Table', '');
-        _.extend(this, config);
-    },
-
-    setReferenceRange: function (start, end) {
-        this.ref = [start, end];
-    },
-
-    setTableColumns: function (columns) {
-        _.each(columns, function (column) {
-            this.addTableColumn(column);
-        }, this);
-    },
-
-    /**
-    * Expects an object with the following optional properties:
-    * name (required)
-    * dataCellStyle
-    * dataDxfId
-    * headerRowCellStyle
-    * headerRowDxfId
-    * totalsRowCellStyle
-    * totalsRowDxfId
-    * totalsRowFunction
-    * totalsRowLabel
-    * columnFormula
-    * columnFormulaIsArrayType (boolean)
-    * totalFormula
-    * totalFormulaIsArrayType (boolean)
-    */
-    addTableColumn: function (column) {
-        if(_.isString(column)) {
-            column = {
-                name: column
-            };
-        }
-        if(!column.name) {
-            throw "Invalid argument for addTableColumn - minimum requirement is a name property";
-        }
-        this.tableColumns.push(column);
-    },
-
-    /**
-    * Expects an object with the following properties:
-    * caseSensitive (boolean)
-    * dataRange
-    * columnSort (assumes true)
-    * sortDirection
-    * sortRange (defaults to dataRange)
-    */
-    setSortState: function (state) {
-        this.sortState = state;
-    },
-
-    toXML: function () {
-        var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'table');
-        var table = doc.documentElement;
-        table.setAttribute('id', this.tableId);
-        table.setAttribute('name', this.name);
-        table.setAttribute('displayName', this.displayName);
-        var s = this.ref[0];
-        var e = this.ref[1];
-        table.setAttribute('ref', util.positionToLetterRef(s[0], s[1]) + ":" + util.positionToLetterRef(e[0], e[1]));
-
-        /** TOTALS **/
-        table.setAttribute('totalsRowCount', this.totalsRowCount);
-
-        /** HEADER **/
-        table.setAttribute('headerRowCount', this.headerRowCount);
-        if(this.headerRowDxfId) {
-            table.setAttribute('headerRowDxfId', this.headerRowDxfId);
-        }
-        if(this.headerRowBorderDxfId) {
-            table.setAttribute('headerRowBorderDxfId', this.headerRowBorderDxfId);
-        }
-
-        if(!this.ref) {
-            throw "Needs at least a reference range";
-        }
-        if(!this.autoFilter) {
-            this.addAutoFilter(this.ref[0], this.ref[1]);
-        }
-
-        table.appendChild(this.exportAutoFilter(doc));
-
-        table.appendChild(this.exportTableColumns(doc));
-        table.appendChild(this.exportTableStyleInfo(doc));
-        return doc;
-    },
-
-    exportTableColumns: function (doc) {
-        var tableColumns = doc.createElement('tableColumns');
-        tableColumns.setAttribute('count', this.tableColumns.length);
-        var tcs = this.tableColumns;
-        for(var i = 0, l = tcs.length; i < l; i++) {
-            var tc = tcs[i];
-            var tableColumn = doc.createElement('tableColumn');
-            tableColumn.setAttribute('id', i + 1);
-            tableColumn.setAttribute('name', tc.name);
-            tableColumns.appendChild(tableColumn);
-
-            if(tc.totalsRowFunction) {
-                tableColumn.setAttribute('totalsRowFunction', tc.totalsRowFunction);
-            }
-            if(tc.totalsRowLabel) {
-                tableColumn.setAttribute('totalsRowLabel', tc.totalsRowLabel);
-            }
-        }
-        return tableColumns;
-    },
-
-    exportAutoFilter: function (doc) {
-        var autoFilter = doc.createElement('autoFilter');
-        var s = this.autoFilter[0];
-        var e = this.autoFilter[1];
-        autoFilter.setAttribute('ref', util.positionToLetterRef(s[0], s[1]) + ":" + util.positionToLetterRef(e[0], e[1]  - this.totalsRowCount));
-        return autoFilter;
-    },
-
-    exportTableStyleInfo: function (doc) {
-        var ts = this.styleInfo;
-        var tableStyle = doc.createElement('tableStyleInfo');
-        tableStyle.setAttribute('name', ts.themeStyle);
-        tableStyle.setAttribute('showFirstColumn', ts.showFirstColumn ? "1" : "0");
-        tableStyle.setAttribute('showLastColumn', ts.showLastColumn ? "1" : "0");
-        tableStyle.setAttribute('showColumnStripes', ts.showColumnStripes ? "1" : "0");
-        tableStyle.setAttribute('showRowStripes', ts.showRowStripes ? "1" : "0");
-        return tableStyle;
-    },
-
-    addAutoFilter: function (startRef, endRef) {
-        this.autoFilter = [startRef, endRef];
-    }
-});
-module.exports = Table;
-
-/***/ }),
-
 /***/ 527:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
 
 var TwoCellAnchor = function (config) {
     this.from = {xOff: 0, yOff: 0};
@@ -1548,147 +363,439 @@ module.exports = TwoCellAnchor;
 
 /***/ }),
 
-/***/ 543:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 890:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
+var _ = __nccwpck_require__(804);
+var AbsoluteAnchor = __nccwpck_require__(183);
+var OneCellAnchor = __nccwpck_require__(982);
+var TwoCellAnchor = __nccwpck_require__(527);
 
-var XMLDOM = function (ns, rootNodeName) {
-    this.documentElement = this.createElement(rootNodeName);
-    this.documentElement.setAttribute('xmlns', ns);
+/**
+ * This is mostly a global spot where all of the relationship managers can get and set
+ * path information from/to. 
+ * @module Excel/Drawing
+ */
+var Drawing = function () {
+    this.id = _.uniqueId('Drawing');
 };
 
-_.extend(XMLDOM.prototype, {
-    createElement: function (name) {
-        return new XMLDOM.XMLNode({
-            nodeName: name
-        });
-    },
-    createTextNode: function (text) {
-        return new XMLDOM.TextNode(text);
-    },
-    toString: function () {
-        return this.documentElement.toString();
+_.extend(Drawing.prototype, {
+    /**
+     *
+     * @param {String} type Can be 'absoluteAnchor', 'oneCellAnchor', or 'twoCellAnchor'.
+     * @param {Object} config Shorthand - pass the created anchor coords that can normally be used to construct it.
+     * @returns {Anchor}
+     */
+    createAnchor: function (type, config) {
+        config = config || {};
+        config.drawing = this;
+        switch(type) {
+            case 'absoluteAnchor':
+                this.anchor = new AbsoluteAnchor(config);
+                break;
+            case 'oneCellAnchor':
+                this.anchor = new OneCellAnchor(config);
+                break;
+            case 'twoCellAnchor':
+                this.anchor = new TwoCellAnchor(config);
+                break;
+        }
+        return this.anchor;
     }
 });
 
-XMLDOM.Node = function () {};
-XMLDOM.Node.Create = function (config) {
-    switch(config.type) {
-        case "XML":
-            return new XMLDOM.XMLNode(config);
-        case "TEXT":
-            return new XMLDOM.TextNode(config.nodeValue);
-    }
+Object.defineProperties(Drawing, {
+    AbsoluteAnchor: {get: function () { return __nccwpck_require__(183); }},
+    Chart: {get: function () { return __nccwpck_require__(75); }},
+    OneCellAnchor: {get: function () { return __nccwpck_require__(982); }},
+    Picture: {get: function () { return __nccwpck_require__(147); }},
+    TwoCellAnchor: {get: function () { return __nccwpck_require__(527); }}
+});
+
+module.exports = Drawing;
+
+
+/***/ }),
+
+/***/ 861:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+/**
+ * @module Excel/Drawings
+ */
+
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+var RelationshipManager = __nccwpck_require__(785);
+
+var Drawings = function () {
+    this.drawings = [];
+    this.relations = new RelationshipManager();
+    this.id = _.uniqueId('Drawings');
 };
 
-XMLDOM.TextNode = function (text) {
-    this.nodeValue = text;
-};
- _.extend(XMLDOM.TextNode.prototype, {
-     toJSON: function () {
-         return {
-             nodeValue: this.nodeValue,
-             type: 'TEXT'
-         };
-     },
-    toString: function () {
-        return _.escape(this.nodeValue);
-    }
- });
+_.extend(Drawings.prototype, {
+    /**
+     * Adds a drawing (more likely a subclass of a Drawing) to the 'Drawings' for a particular worksheet.
+     *
+     * @param {Drawing} drawing
+     * @returns {undefined}
+     */
+    addDrawing: function (drawing) {
+        this.drawings.push(drawing);
+    },
+    getCount: function () {
+        return this.drawings.length;
+    },
+    toXML: function () {
+        var doc = util.createXmlDoc(util.schemas.spreadsheetDrawing, 'xdr:wsDr');
+        var drawings = doc.documentElement;
+        drawings.setAttribute('xmlns:a', util.schemas.drawing);
+        drawings.setAttribute('xmlns:r', util.schemas.relationships);
+        drawings.setAttribute('xmlns:xdr', util.schemas.spreadsheetDrawing);
 
-XMLDOM.XMLNode = function (config) {
-    this.nodeName = config.nodeName;
-    this.children = [];
-    this.nodeValue = config.nodeValue || "";
-    this.attributes = {};
+        for(var i = 0, l = this.drawings.length; i < l; i++) {
 
-    if(config.children) {
-        for(var i = 0, l = config.children.length; i < l; i++) {
-            this.appendChild(XMLDOM.Node.Create(config.children[i]));
-        }
-    }
-
-    if(config.attributes) {
-        for(var attr in config.attributes) {
-            if(config.attributes.hasOwnProperty(attr)) {
-                this.setAttribute(attr, config.attributes[attr]);
+            var rId = this.relations.getRelationshipId(this.drawings[i].getMediaData());
+            if(!rId) {
+                rId = this.relations.addRelation(this.drawings[i].getMediaData(), this.drawings[i].getMediaType()); //chart
             }
+            this.drawings[i].setRelationshipId(rId);
+            drawings.appendChild(this.drawings[i].toXML(doc));
         }
+        return doc;
     }
+});
+
+module.exports = Drawings;
+
+/***/ }),
+
+/***/ 753:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+
+/**
+ * @module Excel/Pane
+ *
+ * https://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.pane%28v=office.14%29.aspx
+ */
+var _ = __nccwpck_require__(804);
+
+var Pane = function () {
+
+    /*
+    Possible Values:
+     null
+     split	Split
+     frozen	Frozen
+     frozenSplit	Frozen Split
+     http://www.datypic.com/sc/ooxml/t-ssml_ST_PaneState.html
+     */
+    this.state = null;
+    this.xSplit = null;
+    this.ySplit = null;
+    this.activePane = 'bottomRight';
+    this.topLeftCell = null;
+
 };
-_.extend(XMLDOM.XMLNode.prototype, {
 
-    toString: function () {
-        var string = "<" + this.nodeName;
-        for(var attr in this.attributes) {
-            if(this.attributes.hasOwnProperty(attr)) {
-                string = string + " " + attr + "=\""+_.escape(this.attributes[attr])+"\"";
-            }
-        }
+_.extend(Pane.prototype, {
 
-        var childContent = "";
-        for(var i = 0, l = this.children.length; i < l; i++) {
-            childContent += this.children[i].toString();
-        }
-
-        if (childContent){
-            string +=  ">" + childContent + "</" + this.nodeName + ">";
-        } else {
-            string += "/>";
-        }
-
-        return string;
+    freezePane: function(column, row, cell) {
+        this._freezePane = {xSplit: column, ySplit: row, cell: cell};
     },
 
-    toJSON: function () {
-        var children = [];
-        for(var i = 0, l = this.children.length; i < l; i++) {
-            children.push(this.children[i].toJSON());
+    exportXML: function (doc) {
+        var pane = doc.createElement('pane');
+
+        if(this.state !== null) {
+            pane.setAttribute('xSplit', this._freezePane.xSplit);
+            pane.setAttribute('ySplit', this._freezePane.ySplit);
+            pane.setAttribute('topLeftCell', this._freezePane.cell);
+            pane.setAttribute('activePane', 'bottomRight');
+            pane.setAttribute('state', 'frozen');
         }
+        return pane;
+    }
+});
+
+module.exports = Pane;
+
+/***/ }),
+
+/***/ 255:
+/***/ (function(module) {
+
+
+/**
+ * This is mostly a global spot where all of the relationship managers can get and set
+ * path information from/to.
+ * @module Excel/Paths
+ */
+module.exports = {};
+
+
+/***/ }),
+
+/***/ 864:
+/***/ (function(module) {
+
+
+
+module.exports = {
+    /**
+     * Converts pixel sizes to 'EMU's, which is what Open XML uses.
+     *
+     * @todo clean this up. Code borrowed from http://polymathprogrammer.com/2009/10/22/english-metric-units-and-open-xml/,
+     * but not sure that it's going to be as accurate as it needs to be.
+     *
+     * @param int pixels
+     * @returns int
+     */
+    pixelsToEMUs: function (pixels) {
+        return Math.round(pixels * 914400 / 96);
+    }
+};
+
+
+/***/ }),
+
+/***/ 785:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+var Paths = __nccwpck_require__(255);
+
+
+/**
+ * @module Excel/RelationshipManager
+ */
+var RelationshipManager = function () {
+    this.relations = {};
+    this.lastId = 1;
+};
+
+_.uniqueId('rId'); //priming
+
+_.extend(RelationshipManager.prototype, {
+
+    importData: function (data) {
+        this.relations = data.relations;
+        this.lastId = data.lastId;
+    },
+    exportData: function () {
         return {
-            nodeName: this.nodeName,
-            children: children,
-            nodeValue: this.nodeValue,
-            attributes: this.attributes,
-            type: "XML"
+            relations: this.relations,
+            lastId: this.lastId
         };
     },
 
-    setAttribute: function (name, val) {
-        if(val === null) {
-            delete this.attributes[name];
-            delete this[name];
-            return;
-        }
-        this.attributes[name] = val;
-        this[name] = val;
+    addRelation: function (object, type) {
+        this.relations[object.id] = {
+            id: _.uniqueId('rId'),
+            schema: util.schemas[type],
+            object: object
+        };
+        return this.relations[object.id].id;
     },
-    appendChild: function (child) {
-        this.children.push(child);
-        this.firstChild = this.children[0];
+
+    getRelationshipId: function (object) {
+        return this.relations[object.id] ? this.relations[object.id].id : null;
     },
-    cloneNode: function () {
-        return new XMLDOM.XMLNode(this.toJSON());
+
+    toXML: function () {
+        var doc = util.createXmlDoc(util.schemas.relationshipPackage, 'Relationships');
+        var relationships = doc.documentElement;
+
+        _.each(this.relations, function (data, id) {
+            var relationship = util.createElement(doc, 'Relationship', [
+                ['Id', data.id],
+                ['Type', data.schema],
+                ['Target', data.object.target || Paths[id]]
+            ]);
+            if (data.object.targetMode) {
+              relationship.setAttribute('TargetMode', data.object.targetMode);
+            }
+            relationships.appendChild(relationship);
+        });
+        return doc;
     }
 });
 
-module.exports = XMLDOM;
+module.exports = RelationshipManager;
+
+
+/***/ }),
+
+/***/ 349:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+
+
+/**
+ * @module Excel/SharedStrings
+ */
+var sharedStrings = function () {
+    this.strings = {};
+    this.stringArray = [];
+    this.id = _.uniqueId('SharedStrings');
+};
+_.extend(sharedStrings.prototype, {
+    /**
+     * Adds a string to the shared string file, and returns the ID of the
+     * string which can be used to reference it in worksheets.
+     *
+     * @param string {String}
+     * @return int
+     */
+    addString: function (string) {
+        this.strings[string] = this.stringArray.length;
+        this.stringArray[this.stringArray.length] = string;
+        return this.strings[string];
+    },
+
+    exportData: function () {
+        return this.strings;
+    },
+
+    toXML: function () {
+        var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'sst');
+        var sharedStringTable = doc.documentElement;
+        this.stringArray.reverse();
+        var l = this.stringArray.length;
+        sharedStringTable.setAttribute('count', l);
+        sharedStringTable.setAttribute('uniqueCount', l);
+
+        var template = doc.createElement('si');
+        var templateValue = doc.createElement('t');
+        templateValue.appendChild(doc.createTextNode('--placeholder--'));
+        template.appendChild(templateValue);
+        var strings = this.stringArray;
+
+        while (l--) {
+            var clone = template.cloneNode(true);
+            clone.firstChild.firstChild.nodeValue = strings[l];
+            sharedStringTable.appendChild(clone);
+        }
+
+        return doc;
+    }
+});
+module.exports = sharedStrings;
+
+/***/ }),
+
+/***/ 958:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+/**
+ * @module Excel/SheetView
+ *
+ * https://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.sheetview%28v=office.14%29.aspx
+ *
+ */
+
+var _ = __nccwpck_require__(804);
+var Pane = __nccwpck_require__(753);
+var util = __nccwpck_require__(328);
+
+var SheetView = function (config) {
+    config = config || {};
+
+    this.pane = config.pane || new Pane();
+    this.showZeros = null; //Default
+    this.defaultGridColor = null;
+    this.colorId = null;
+    this.rightToLeft = null;
+    this.showFormulas = null;
+    this.showGridLines = null;
+    this.showOutlineSymbols = null;
+    this.showRowColHeaders = null;
+    this.showRuler = null;
+    this.showWhiteSpace = null;
+    this.tabSelected = null;
+    this.topLeftCell = null;
+    this.viewType = null; //http://www.datypic.com/sc/ooxml/t-ssml_ST_SheetViewType.html
+    this.windowProtection = null;
+    this.zoomScale = null;
+    this.zoomScaleNormal = null;
+    this.zoomScalePageLayoutView = null;
+    this.zoomScaleSheetLayoutView = null;
+};
+
+_.extend(SheetView.prototype, {
+
+    /**
+     * Added froze pane
+     * @param column - column number: 0, 1, 2 ...
+     * @param row - row number: 0, 1, 2 ...
+     * @param cell - 'A1'
+     * @deprecated
+     */
+    freezePane: function(column, row, cell) {
+        this.pane.state = 'frozen';
+        this.pane.xSplit = column;
+        this.pane.ySplit = row;
+        this.pane.topLeftCell = cell;
+    },
+
+    exportXML: function (doc) {
+        var sheetViews = doc.createElement('sheetViews'),
+            sheetView = doc.createElement('sheetView');
+
+        util.setAttributesOnDoc(sheetView, {
+            //TODO apparent you can add 'book views'.. investigate what these are
+            workbookViewId: 0,
+            showZeros: {v: this.showZeros, type: Boolean},
+            defaultGridColor:  {v: this.defaultGridColor, type: Boolean},
+            //TODO: I have no idea what this even is :\
+            colorId: this.colorId,
+            rightToLeft:  {v: this.rightToLeft, type: Boolean},
+            showFormulas:  {v: this.showFormulas, type: Boolean},
+            showGridLines:  {v: this.showGridLines, type: Boolean},
+            showOutlineSymbols:  {v: this.showOutlineSymbols, type: Boolean},
+            showRowColHeaders:  {v: this.showRowColHeaders, type: Boolean},
+            showRuler:  {v: this.showRuler, type: Boolean},
+            showWhiteSpace:  {v: this.showWhiteSpace, type: Boolean},
+            tabSelected:  {v: this.tabSelected, type: Boolean},
+            viewType: this.viewType,
+            windowProtection:  {v: this.windowProtection, type: Boolean},
+            zoomScale:  {v: this.zoomScale, type: Boolean},
+            zoomScaleNormal: this.zoomScaleNormal,
+            zoomScalePageLayoutView: this.zoomScalePageLayoutView,
+            zoomScaleSheetLayoutView: this.zoomScaleSheetLayoutView
+        });
+
+        sheetView.appendChild(this.pane.exportXML(doc));
+
+        sheetViews.appendChild(sheetView);
+        return sheetViews;
+    }
+});
+
+module.exports = SheetView;
+
 
 /***/ }),
 
 /***/ 747:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 /**
  * @module Excel/StyleSheet
  */
 
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
 
 var StyleSheet = function () {
     this.id = _.uniqueId('StyleSheet');
@@ -2380,288 +1487,199 @@ module.exports = StyleSheet;
 
 /***/ }),
 
-/***/ 753:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 496:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
 
 /**
- * @module Excel/Pane
- *
- * https://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.pane%28v=office.14%29.aspx
+ * @module Excel/Table
  */
-var _ = __webpack_require__(804);
 
-var Pane = function () {
-
-    /*
-    Possible Values:
-     null
-     split	Split
-     frozen	Frozen
-     frozenSplit	Frozen Split
-     http://www.datypic.com/sc/ooxml/t-ssml_ST_PaneState.html
-     */
-    this.state = null;
-    this.xSplit = null;
-    this.ySplit = null;
-    this.activePane = 'bottomRight';
-    this.topLeftCell = null;
-
+var Table = function (config) {
+    _.defaults(this, {
+        name: "",
+        displayName: "",
+        dataCellStyle: null,
+        dataDfxId: null,
+        headerRowBorderDxfId: null,
+        headerRowCellStyle: null,
+        headerRowCount: 1,
+        headerRowDxfId: null,
+        insertRow: false,
+        insertRowShift: false,
+        ref: null,
+        tableBorderDxfId: null,
+        totalsRowBorderDxfId: null,
+        totalsRowCellStyle: null,
+        totalsRowCount: 0,
+        totalsRowDxfId: null,
+        tableColumns: [],
+        autoFilter: null,
+        sortState: null,
+        styleInfo: {}
+    });
+    this.initialize(config);
 };
+_.extend(Table.prototype, {
 
-_.extend(Pane.prototype, {
-
-    freezePane: function(column, row, cell) {
-        this._freezePane = {xSplit: column, ySplit: row, cell: cell};
+    initialize: function (config) {
+        this.displayName = _.uniqueId("Table");
+        this.name = this.displayName;
+        this.id = this.name;
+        this.tableId = this.id.replace('Table', '');
+        _.extend(this, config);
     },
 
-    exportXML: function (doc) {
-        var pane = doc.createElement('pane');
+    setReferenceRange: function (start, end) {
+        this.ref = [start, end];
+    },
 
-        if(this.state !== null) {
-            pane.setAttribute('xSplit', this._freezePane.xSplit);
-            pane.setAttribute('ySplit', this._freezePane.ySplit);
-            pane.setAttribute('topLeftCell', this._freezePane.cell);
-            pane.setAttribute('activePane', 'bottomRight');
-            pane.setAttribute('state', 'frozen');
+    setTableColumns: function (columns) {
+        _.each(columns, function (column) {
+            this.addTableColumn(column);
+        }, this);
+    },
+
+    /**
+    * Expects an object with the following optional properties:
+    * name (required)
+    * dataCellStyle
+    * dataDxfId
+    * headerRowCellStyle
+    * headerRowDxfId
+    * totalsRowCellStyle
+    * totalsRowDxfId
+    * totalsRowFunction
+    * totalsRowLabel
+    * columnFormula
+    * columnFormulaIsArrayType (boolean)
+    * totalFormula
+    * totalFormulaIsArrayType (boolean)
+    */
+    addTableColumn: function (column) {
+        if(_.isString(column)) {
+            column = {
+                name: column
+            };
         }
-        return pane;
-    }
-});
-
-module.exports = Pane;
-
-/***/ }),
-
-/***/ 785:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-var Paths = __webpack_require__(255);
-
-
-/**
- * @module Excel/RelationshipManager
- */
-var RelationshipManager = function () {
-    this.relations = {};
-    this.lastId = 1;
-};
-
-_.uniqueId('rId'); //priming
-
-_.extend(RelationshipManager.prototype, {
-
-    importData: function (data) {
-        this.relations = data.relations;
-        this.lastId = data.lastId;
-    },
-    exportData: function () {
-        return {
-            relations: this.relations,
-            lastId: this.lastId
-        };
+        if(!column.name) {
+            throw "Invalid argument for addTableColumn - minimum requirement is a name property";
+        }
+        this.tableColumns.push(column);
     },
 
-    addRelation: function (object, type) {
-        this.relations[object.id] = {
-            id: _.uniqueId('rId'),
-            schema: util.schemas[type],
-            object: object
-        };
-        return this.relations[object.id].id;
-    },
-
-    getRelationshipId: function (object) {
-        return this.relations[object.id] ? this.relations[object.id].id : null;
+    /**
+    * Expects an object with the following properties:
+    * caseSensitive (boolean)
+    * dataRange
+    * columnSort (assumes true)
+    * sortDirection
+    * sortRange (defaults to dataRange)
+    */
+    setSortState: function (state) {
+        this.sortState = state;
     },
 
     toXML: function () {
-        var doc = util.createXmlDoc(util.schemas.relationshipPackage, 'Relationships');
-        var relationships = doc.documentElement;
+        var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'table');
+        var table = doc.documentElement;
+        table.setAttribute('id', this.tableId);
+        table.setAttribute('name', this.name);
+        table.setAttribute('displayName', this.displayName);
+        var s = this.ref[0];
+        var e = this.ref[1];
+        table.setAttribute('ref', util.positionToLetterRef(s[0], s[1]) + ":" + util.positionToLetterRef(e[0], e[1]));
 
-        _.each(this.relations, function (data, id) {
-            var relationship = util.createElement(doc, 'Relationship', [
-                ['Id', data.id],
-                ['Type', data.schema],
-                ['Target', data.object.target || Paths[id]]
-            ]);
-            if (data.object.targetMode) {
-              relationship.setAttribute('TargetMode', data.object.targetMode);
-            }
-            relationships.appendChild(relationship);
-        });
-        return doc;
-    }
-});
+        /** TOTALS **/
+        table.setAttribute('totalsRowCount', this.totalsRowCount);
 
-module.exports = RelationshipManager;
-
-
-/***/ }),
-
-/***/ 804:
-/***/ (function(module) {
-
-module.exports = require("lodash");
-
-/***/ }),
-
-/***/ 861:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-/**
- * @module Excel/Drawings
- */
-
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-var RelationshipManager = __webpack_require__(785);
-
-var Drawings = function () {
-    this.drawings = [];
-    this.relations = new RelationshipManager();
-    this.id = _.uniqueId('Drawings');
-};
-
-_.extend(Drawings.prototype, {
-    /**
-     * Adds a drawing (more likely a subclass of a Drawing) to the 'Drawings' for a particular worksheet.
-     *
-     * @param {Drawing} drawing
-     * @returns {undefined}
-     */
-    addDrawing: function (drawing) {
-        this.drawings.push(drawing);
-    },
-    getCount: function () {
-        return this.drawings.length;
-    },
-    toXML: function () {
-        var doc = util.createXmlDoc(util.schemas.spreadsheetDrawing, 'xdr:wsDr');
-        var drawings = doc.documentElement;
-        drawings.setAttribute('xmlns:a', util.schemas.drawing);
-        drawings.setAttribute('xmlns:r', util.schemas.relationships);
-        drawings.setAttribute('xmlns:xdr', util.schemas.spreadsheetDrawing);
-
-        for(var i = 0, l = this.drawings.length; i < l; i++) {
-
-            var rId = this.relations.getRelationshipId(this.drawings[i].getMediaData());
-            if(!rId) {
-                rId = this.relations.addRelation(this.drawings[i].getMediaData(), this.drawings[i].getMediaType()); //chart
-            }
-            this.drawings[i].setRelationshipId(rId);
-            drawings.appendChild(this.drawings[i].toXML(doc));
+        /** HEADER **/
+        table.setAttribute('headerRowCount', this.headerRowCount);
+        if(this.headerRowDxfId) {
+            table.setAttribute('headerRowDxfId', this.headerRowDxfId);
         }
-        return doc;
-    }
-});
-
-module.exports = Drawings;
-
-/***/ }),
-
-/***/ 864:
-/***/ (function(module) {
-
-"use strict";
-
-
-module.exports = {
-    /**
-     * Converts pixel sizes to 'EMU's, which is what Open XML uses.
-     *
-     * @todo clean this up. Code borrowed from http://polymathprogrammer.com/2009/10/22/english-metric-units-and-open-xml/,
-     * but not sure that it's going to be as accurate as it needs to be.
-     *
-     * @param int pixels
-     * @returns int
-     */
-    pixelsToEMUs: function (pixels) {
-        return Math.round(pixels * 914400 / 96);
-    }
-};
-
-
-/***/ }),
-
-/***/ 890:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var _ = __webpack_require__(804);
-var AbsoluteAnchor = __webpack_require__(183);
-var OneCellAnchor = __webpack_require__(982);
-var TwoCellAnchor = __webpack_require__(527);
-
-/**
- * This is mostly a global spot where all of the relationship managers can get and set
- * path information from/to. 
- * @module Excel/Drawing
- */
-var Drawing = function () {
-    this.id = _.uniqueId('Drawing');
-};
-
-_.extend(Drawing.prototype, {
-    /**
-     *
-     * @param {String} type Can be 'absoluteAnchor', 'oneCellAnchor', or 'twoCellAnchor'.
-     * @param {Object} config Shorthand - pass the created anchor coords that can normally be used to construct it.
-     * @returns {Anchor}
-     */
-    createAnchor: function (type, config) {
-        config = config || {};
-        config.drawing = this;
-        switch(type) {
-            case 'absoluteAnchor':
-                this.anchor = new AbsoluteAnchor(config);
-                break;
-            case 'oneCellAnchor':
-                this.anchor = new OneCellAnchor(config);
-                break;
-            case 'twoCellAnchor':
-                this.anchor = new TwoCellAnchor(config);
-                break;
+        if(this.headerRowBorderDxfId) {
+            table.setAttribute('headerRowBorderDxfId', this.headerRowBorderDxfId);
         }
-        return this.anchor;
+
+        if(!this.ref) {
+            throw "Needs at least a reference range";
+        }
+        if(!this.autoFilter) {
+            this.addAutoFilter(this.ref[0], this.ref[1]);
+        }
+
+        table.appendChild(this.exportAutoFilter(doc));
+
+        table.appendChild(this.exportTableColumns(doc));
+        table.appendChild(this.exportTableStyleInfo(doc));
+        return doc;
+    },
+
+    exportTableColumns: function (doc) {
+        var tableColumns = doc.createElement('tableColumns');
+        tableColumns.setAttribute('count', this.tableColumns.length);
+        var tcs = this.tableColumns;
+        for(var i = 0, l = tcs.length; i < l; i++) {
+            var tc = tcs[i];
+            var tableColumn = doc.createElement('tableColumn');
+            tableColumn.setAttribute('id', i + 1);
+            tableColumn.setAttribute('name', tc.name);
+            tableColumns.appendChild(tableColumn);
+
+            if(tc.totalsRowFunction) {
+                tableColumn.setAttribute('totalsRowFunction', tc.totalsRowFunction);
+            }
+            if(tc.totalsRowLabel) {
+                tableColumn.setAttribute('totalsRowLabel', tc.totalsRowLabel);
+            }
+        }
+        return tableColumns;
+    },
+
+    exportAutoFilter: function (doc) {
+        var autoFilter = doc.createElement('autoFilter');
+        var s = this.autoFilter[0];
+        var e = this.autoFilter[1];
+        autoFilter.setAttribute('ref', util.positionToLetterRef(s[0], s[1]) + ":" + util.positionToLetterRef(e[0], e[1]  - this.totalsRowCount));
+        return autoFilter;
+    },
+
+    exportTableStyleInfo: function (doc) {
+        var ts = this.styleInfo;
+        var tableStyle = doc.createElement('tableStyleInfo');
+        tableStyle.setAttribute('name', ts.themeStyle);
+        tableStyle.setAttribute('showFirstColumn', ts.showFirstColumn ? "1" : "0");
+        tableStyle.setAttribute('showLastColumn', ts.showLastColumn ? "1" : "0");
+        tableStyle.setAttribute('showColumnStripes', ts.showColumnStripes ? "1" : "0");
+        tableStyle.setAttribute('showRowStripes', ts.showRowStripes ? "1" : "0");
+        return tableStyle;
+    },
+
+    addAutoFilter: function (startRef, endRef) {
+        this.autoFilter = [startRef, endRef];
     }
 });
-
-Object.defineProperties(Drawing, {
-    AbsoluteAnchor: {get: function () { return __webpack_require__(183); }},
-    Chart: {get: function () { return __webpack_require__(75); }},
-    OneCellAnchor: {get: function () { return __webpack_require__(982); }},
-    Picture: {get: function () { return __webpack_require__(147); }},
-    TwoCellAnchor: {get: function () { return __webpack_require__(527); }}
-});
-
-module.exports = Drawing;
-
+module.exports = Table;
 
 /***/ }),
 
 /***/ 952:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var Q = __webpack_require__(434);
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
-var StyleSheet = __webpack_require__(747);
-var Worksheet = __webpack_require__(20);
-var SharedStrings = __webpack_require__(349);
-var RelationshipManager = __webpack_require__(785);
-var Paths = __webpack_require__(255);
-var XMLDOM = __webpack_require__(543);
+var Q = __nccwpck_require__(434);
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+var StyleSheet = __nccwpck_require__(747);
+var Worksheet = __nccwpck_require__(20);
+var SharedStrings = __nccwpck_require__(349);
+var RelationshipManager = __nccwpck_require__(785);
+var Paths = __nccwpck_require__(255);
+var XMLDOM = __nccwpck_require__(543);
 
 /**
  * @module Excel/Workbook
@@ -2983,175 +2001,1128 @@ module.exports = Workbook;
 
 /***/ }),
 
-/***/ 958:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 20:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
+
+var _ = __nccwpck_require__(804);
+var util = __nccwpck_require__(328);
+var RelationshipManager = __nccwpck_require__(785);
+var SheetView = __nccwpck_require__(958);
+
 /**
- * @module Excel/SheetView
+ * This module represents an excel worksheet in its basic form - no tables, charts, etc. Its purpose is
+ * to hold data, the data's link to how it should be styled, and any links to other outside resources.
  *
- * https://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.sheetview%28v=office.14%29.aspx
- *
+ * @module Excel/Worksheet
  */
+    var Worksheet = function (config) {
+        this.relations = null;
+        this.columnFormats = [];
+        this.data = [];
+        this.mergedCells = [];
+        this.columns = [];
+        this.sheetProtection = false;
+        this._headers = [];
+        this._footers = [];
+        this._tables = [];
+        this._drawings = [];
+        this._rowInstructions = {};
+        this._freezePane = {};
 
-var _ = __webpack_require__(804);
-var Pane = __webpack_require__(753);
-var util = __webpack_require__(328);
+        this.hyperlinks = [];
+        this.sheetView = config.sheetView || new SheetView();
 
-var SheetView = function (config) {
-    config = config || {};
+        this.showZeros = null;
+        this.initialize(config);
+    };
+    _.extend(Worksheet.prototype, {
 
-    this.pane = config.pane || new Pane();
-    this.showZeros = null; //Default
-    this.defaultGridColor = null;
-    this.colorId = null;
-    this.rightToLeft = null;
-    this.showFormulas = null;
-    this.showGridLines = null;
-    this.showOutlineSymbols = null;
-    this.showRowColHeaders = null;
-    this.showRuler = null;
-    this.showWhiteSpace = null;
-    this.tabSelected = null;
-    this.topLeftCell = null;
-    this.viewType = null; //http://www.datypic.com/sc/ooxml/t-ssml_ST_SheetViewType.html
-    this.windowProtection = null;
-    this.zoomScale = null;
-    this.zoomScaleNormal = null;
-    this.zoomScalePageLayoutView = null;
-    this.zoomScaleSheetLayoutView = null;
-};
+        initialize: function (config) {
+            config = config || {};
+            this.name = config.name;
+            this.id = _.uniqueId('Worksheet');
+            this._timezoneOffset = new Date().getTimezoneOffset() * 60 * 1000;
+            if(config.columns) {
+                this.setColumns(config.columns);
+            }
 
-_.extend(SheetView.prototype, {
+            this.relations = new RelationshipManager();
+        },
 
-    /**
-     * Added froze pane
-     * @param column - column number: 0, 1, 2 ...
-     * @param row - row number: 0, 1, 2 ...
-     * @param cell - 'A1'
-     * @deprecated
-     */
-    freezePane: function(column, row, cell) {
-        this.pane.state = 'frozen';
-        this.pane.xSplit = column;
-        this.pane.ySplit = row;
-        this.pane.topLeftCell = cell;
-    },
+        /**
+         * Returns an object that can be consumed by a WorksheetExportWorker
+         * @returns {Object}
+         */
+        exportData: function () {
+            return {
+                relations: this.relations.exportData(),
+                columnFormats: this.columnFormats,
+                data: this.data,
+                columns: this.columns,
+                mergedCells: this.mergedCells,
+                _headers: this._headers,
+                _footers: this._footers,
+                _tables: this._tables,
+                _rowInstructions: this._rowInstructions,
+                _freezePane: this._freezePane,
+                name: this.name,
+                id: this.id
+            };
+        },
 
-    exportXML: function (doc) {
-        var sheetViews = doc.createElement('sheetViews'),
-            sheetView = doc.createElement('sheetView');
+        /**
+         * Imports data - to be used while inside of a WorksheetExportWorker.
+         * @param {Object} data
+         */
+        importData: function (data) {
+            this.relations.importData(data.relations);
+            delete data.relations;
+            _.extend(this, data);
+        },
 
-        util.setAttributesOnDoc(sheetView, {
-            //TODO apparent you can add 'book views'.. investigate what these are
-            workbookViewId: 0,
-            showZeros: {v: this.showZeros, type: Boolean},
-            defaultGridColor:  {v: this.defaultGridColor, type: Boolean},
-            //TODO: I have no idea what this even is :\
-            colorId: this.colorId,
-            rightToLeft:  {v: this.rightToLeft, type: Boolean},
-            showFormulas:  {v: this.showFormulas, type: Boolean},
-            showGridLines:  {v: this.showGridLines, type: Boolean},
-            showOutlineSymbols:  {v: this.showOutlineSymbols, type: Boolean},
-            showRowColHeaders:  {v: this.showRowColHeaders, type: Boolean},
-            showRuler:  {v: this.showRuler, type: Boolean},
-            showWhiteSpace:  {v: this.showWhiteSpace, type: Boolean},
-            tabSelected:  {v: this.tabSelected, type: Boolean},
-            viewType: this.viewType,
-            windowProtection:  {v: this.windowProtection, type: Boolean},
-            zoomScale:  {v: this.zoomScale, type: Boolean},
-            zoomScaleNormal: this.zoomScaleNormal,
-            zoomScalePageLayoutView: this.zoomScalePageLayoutView,
-            zoomScaleSheetLayoutView: this.zoomScaleSheetLayoutView
-        });
+        setSharedStringCollection: function (stringCollection) {
+            this.sharedStrings = stringCollection;
+        },
 
-        sheetView.appendChild(this.pane.exportXML(doc));
+        addTable: function (table) {
+            this._tables.push(table);
+            this.relations.addRelation(table, 'table');
+        },
 
-        sheetViews.appendChild(sheetView);
-        return sheetViews;
-    }
-});
+        addDrawings: function (table) {
+            this._drawings.push(table);
+            this.relations.addRelation(table, 'drawingRelationship');
+        },
 
-module.exports = SheetView;
+        setRowInstructions: function (rowIndex, instructions) {
+            this._rowInstructions[rowIndex] = instructions;
+        },
+
+        /**
+        * Expects an array length of three.
+        *
+        * @see Excel/Worksheet compilePageDetailPiece
+        * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
+        *
+        * @param {Array} headers [left, center, right]
+        */
+        setHeader: function (headers) {
+            if(!_.isArray(headers)) {
+                throw "Invalid argument type - setHeader expects an array of three instructions";
+            }
+            this._headers = headers;
+        },
+
+        /**
+        * Expects an array length of three.
+        *
+        * @see Excel/Worksheet compilePageDetailPiece
+        * @see <a href='/cookbook/addingHeadersAndFooters.html'>Adding headers and footers to a worksheet</a>
+        *
+        * @param {Array} footers [left, center, right]
+        */
+        setFooter: function (footers) {
+            if(!_.isArray(footers)) {
+                throw "Invalid argument type - setFooter expects an array of three instructions";
+            }
+            this._footers = footers;
+        },
+
+        /**
+         * Turns page header/footer details into the proper format for Excel.
+         * @param {type} data
+         * @returns {String}
+         */
+        compilePageDetailPackage: function (data) {
+            data = data || "";
+            return [
+            "&L", this.compilePageDetailPiece(data[0] || ""),
+            "&C", this.compilePageDetailPiece(data[1] || ""),
+            "&R", this.compilePageDetailPiece(data[2] || "")
+            ].join('');
+        },
+
+        /**
+         * Turns instructions on page header/footer details into something
+         * usable by Excel.
+         *
+         * @param {type} data
+         * @returns {String|@exp;_@call;reduce}
+         */
+        compilePageDetailPiece: function (data) {
+            if(_.isString(data)) {
+                return '&"-,Regular"'.concat(data);
+            }
+            if(_.isObject(data) && !_.isArray(data)) {
+                var string = "";
+                if(data.font || data.bold) {
+                    var weighting = data.bold ? "Bold" : "Regular";
+                    string += '&"' + (data.font || '-');
+                    string += ',' + weighting + '"';
+                } else {
+                    string += '&"-,Regular"';
+                }
+                if(data.underline) {
+                    string += "&U";
+                }
+                if(data.fontSize) {
+                    string += "&"+data.fontSize;
+                }
+                string += data.text;
+
+                return string;
+            }
+
+            if(_.isArray(data)) {
+                var self = this;
+                return _.reduce(data, function (m, v) {
+                    return m.concat(self.compilePageDetailPiece(v));
+                }, "");
+            }
+        },
+
+        /**
+         * Creates the header node.
+         *
+         * @todo implement the ability to do even/odd headers
+         * @param {XML Doc} doc
+         * @returns {XML Node}
+         */
+        exportHeader: function (doc) {
+            var oddHeader = doc.createElement('oddHeader');
+            oddHeader.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._headers)));
+            return oddHeader;
+        },
+
+        /**
+         * Creates the footer node.
+         *
+         * @todo implement the ability to do even/odd footers
+         * @param {XML Doc} doc
+         * @returns {XML Node}
+         */
+        exportFooter: function (doc) {
+            var oddFooter = doc.createElement('oddFooter');
+            oddFooter.appendChild(doc.createTextNode(this.compilePageDetailPackage(this._footers)));
+            return oddFooter;
+        },
+
+        /**
+         * This creates some nodes ahead of time, which cuts down on generation time due to
+         * most cell definitions being essentially the same, but having multiple nodes that need
+         * to be created. Cloning takes less time than creation.
+         *
+         * @private
+         * @param {XML Doc} doc
+         * @returns {_L8.Anonym$0._buildCache.Anonym$2}
+         */
+        _buildCache: function (doc) {
+            var numberNode = doc.createElement('c');
+            var value = doc.createElement('v');
+            value.appendChild(doc.createTextNode("--temp--"));
+            numberNode.appendChild(value);
+
+            var formulaNode = doc.createElement('c');
+            var formulaValue = doc.createElement('f');
+            formulaValue.appendChild(doc.createTextNode("--temp--"));
+            formulaNode.appendChild(formulaValue);
+
+            var stringNode = doc.createElement('c');
+            stringNode.setAttribute('t', 's');
+            var stringValue = doc.createElement('v');
+            stringValue.appendChild(doc.createTextNode("--temp--"));
+            stringNode.appendChild(stringValue);
+
+
+            return {
+                number: numberNode,
+                date: numberNode,
+                string: stringNode,
+                formula: formulaNode
+            };
+        },
+
+        /**
+         * Runs through the XML document and grabs all of the strings that will
+         * be sent to the 'shared strings' document.
+         *
+         * @returns {Array}
+         */
+        collectSharedStrings: function () {
+            var data = this.data;
+            var maxX = 0;
+            var strings = {};
+            for(var row = 0, l = data.length; row < l; row++) {
+                var dataRow = data[row];
+                var cellCount = dataRow.length;
+                maxX = cellCount > maxX ? cellCount : maxX;
+                for(var c = 0; c < cellCount; c++) {
+                    var cellValue = dataRow[c];
+                    var metadata = cellValue && cellValue.metadata || {};
+                    if (cellValue && typeof cellValue === 'object') {
+                        cellValue = cellValue.value;
+                    }
+
+                    if(!metadata.type) {
+                        if(typeof cellValue === 'number') {
+                            metadata.type = 'number';
+                        }
+                    }
+                    if(metadata.type === "text" || !metadata.type) {
+                        if(typeof strings[cellValue] === 'undefined') {
+                            strings[cellValue] = true;
+                        }
+                    }
+                }
+            }
+            return _.keys(strings);
+        },
+
+        toXML: function () {
+            var data = this.data;
+            var columns = this.columns || [];
+            var doc = util.createXmlDoc(util.schemas.spreadsheetml, 'worksheet');
+            var worksheet = doc.documentElement;
+            var i, l, row;
+            worksheet.setAttribute('xmlns:r', util.schemas.relationships);
+            worksheet.setAttribute('xmlns:mc', util.schemas.markupCompat);
+
+            var maxX = 0;
+            var sheetData = util.createElement(doc, 'sheetData');
+
+            var cellCache = this._buildCache(doc);
+
+            for(row = 0, l = data.length; row < l; row++) {
+                var dataRow = data[row];
+                var cellCount = dataRow.length;
+                maxX = cellCount > maxX ? cellCount : maxX;
+                var rowNode = doc.createElement('row');
+
+                for(var c = 0; c < cellCount; c++) {
+                    columns[c] = columns[c] || {};
+                    var cellValue = dataRow[c];
+                    var cell, metadata = cellValue && cellValue.metadata || {};
+
+                    if (cellValue && typeof cellValue === 'object') {
+                        cellValue = cellValue.value;
+                    }
+
+                    if(!metadata.type) {
+                        if(typeof cellValue === 'number') {
+                            metadata.type = 'number';
+                        }
+                    }
+
+                    switch(metadata.type) {
+                        case "number":
+                            cell = cellCache.number.cloneNode(true);
+                            cell.firstChild.firstChild.nodeValue = cellValue;
+                            break;
+                        case "date":
+                            cell = cellCache.date.cloneNode(true);
+                            cell.firstChild.firstChild.nodeValue = 25569.0 + ((cellValue - this._timezoneOffset)  / (60 * 60 * 24 * 1000));
+                            break;
+                        case "formula":
+                            cell = cellCache.formula.cloneNode(true);
+                            cell.firstChild.firstChild.nodeValue = cellValue;
+                            break;
+                        case "text":
+                            /*falls through*/
+                        default:
+                            var id;
+                            if(typeof this.sharedStrings.strings[cellValue] !== 'undefined') {
+                                id = this.sharedStrings.strings[cellValue];
+                            } else {
+                                id = this.sharedStrings.addString(cellValue);
+                            }
+                            cell = cellCache.string.cloneNode(true);
+                            cell.firstChild.firstChild.nodeValue = id;
+                            break;
+                    }
+                    if(metadata.style) {
+                        cell.setAttribute('s', metadata.style);
+                    } else if (this._rowInstructions[row] && this._rowInstructions[row].style !== undefined) {
+                        cell.setAttribute('s', this._rowInstructions[row].style);
+                    }
+                    cell.setAttribute('r', util.positionToLetterRef(c + 1, row + 1));
+                    rowNode.appendChild(cell);
+                }
+                rowNode.setAttribute('r', row + 1);
+
+                if (this._rowInstructions[row]) {
+                    var rowInst = this._rowInstructions[row];
+
+                    if (rowInst.height !== undefined) {
+                        rowNode.setAttribute('customHeight', '1');
+                        rowNode.setAttribute('ht', rowInst.height);
+                    }
+
+                    if (rowInst.style !== undefined) {
+                      rowNode.setAttribute('customFormat', '1');
+                      rowNode.setAttribute('s', rowInst.style);
+                    }
+                }
+
+                sheetData.appendChild(rowNode);
+            }
+
+            if(maxX !== 0) {
+                worksheet.appendChild(util.createElement(doc, 'dimension', [
+                    ['ref',  util.positionToLetterRef(1, 1) + ':' + util.positionToLetterRef(maxX, data.length)]
+                ]));
+            } else {
+                worksheet.appendChild(util.createElement(doc, 'dimension', [
+                    ['ref',  util.positionToLetterRef(1, 1)]
+                ]));
+            }
+
+            worksheet.appendChild(this.sheetView.exportXML(doc));
+
+            if(this.columns.length) {
+                worksheet.appendChild(this.exportColumns(doc));
+            }
+            worksheet.appendChild(sheetData);
+
+            // The spec doesn't say anything about this, but Excel 2013 requires sheetProtection immediately after sheetData
+            if (this.sheetProtection) {
+                worksheet.appendChild(this.sheetProtection.exportXML(doc));
+            }
+
+            /**
+             * Doing this a bit differently, as hyperlinks could be as populous as rows. Looping twice would be bad.
+             */
+            if(this.hyperlinks.length > 0) {
+                var hyperlinksEl = doc.createElement('hyperlinks');
+                var hyperlinks = this.hyperlinks;
+                for( i = 0, l = hyperlinks.length; i < l; i++) {
+                    var hyperlinkEl = doc.createElement('hyperlink'),
+                        hyperlink = hyperlinks[i];
+                    hyperlinkEl.setAttribute('ref', hyperlink.cell);
+                    hyperlink.id = util.uniqueId('hyperlink');
+                    this.relations.addRelation({
+                        id: hyperlink.id,
+                        target: hyperlink.location,
+                        targetMode: hyperlink.targetMode || 'External'
+                    }, 'hyperlink');
+                    hyperlinkEl.setAttribute('r:id', this.relations.getRelationshipId(hyperlink));
+                    hyperlinksEl.appendChild(hyperlinkEl);
+                }
+                worksheet.appendChild(hyperlinksEl);
+            }
+
+            // 'mergeCells' should be written before 'headerFoot' and 'drawing' due to issue
+            // with Microsoft Excel (2007, 2013)
+            if (this.mergedCells.length > 0) {
+                var mergeCells = doc.createElement('mergeCells');
+                for (i = 0, l = this.mergedCells.length; i < l; i++) {
+                    var mergeCell = doc.createElement('mergeCell');
+                    mergeCell.setAttribute('ref', this.mergedCells[i][0] + ':' + this.mergedCells[i][1]);
+                    mergeCells.appendChild(mergeCell);
+                }
+                worksheet.appendChild(mergeCells);
+            }
+
+            this.exportPageSettings(doc, worksheet);
+
+            if(this._headers.length > 0 || this._footers.length > 0) {
+                var headerFooter = doc.createElement('headerFooter');
+                if(this._headers.length > 0) {
+                    headerFooter.appendChild(this.exportHeader(doc));
+                }
+                if(this._footers.length > 0) {
+                    headerFooter.appendChild(this.exportFooter(doc));
+                }
+                worksheet.appendChild(headerFooter);
+            }
+
+            // the 'drawing' element should be written last, after 'headerFooter', 'mergeCells', etc. due
+            // to issue with Microsoft Excel (2007, 2013)
+            for(i = 0, l = this._drawings.length; i < l; i++) {
+                var drawing = doc.createElement('drawing');
+                drawing.setAttribute('r:id', this.relations.getRelationshipId(this._drawings[i]));
+                worksheet.appendChild(drawing);
+            }
+
+            if(this._tables.length > 0) {
+                var tables = doc.createElement('tableParts');
+                tables.setAttribute('count', this._tables.length);
+                for(i = 0, l = this._tables.length; i < l; i++) {
+                    var table = doc.createElement('tablePart');
+                    table.setAttribute('r:id', this.relations.getRelationshipId(this._tables[i]));
+                    tables.appendChild(table);
+                }
+                worksheet.appendChild(tables);
+            }
+            return doc;
+        },
+
+        /**
+         *
+         * @param {XML Doc} doc
+         * @returns {XML Node}
+         */
+        exportColumns: function (doc) {
+            var cols = util.createElement(doc, 'cols');
+            for(var i = 0, l = this.columns.length; i < l; i++) {
+                var cd = this.columns[i];
+                var col = util.createElement(doc, 'col', [
+                    ['min', cd.min || i + 1],
+                    ['max', cd.max || i + 1]
+                ]);
+                if (cd.hidden) {
+                    col.setAttribute('hidden', 1);
+                }
+                if(cd.bestFit) {
+                    col.setAttribute('bestFit', 1);
+                }
+                if(cd.customWidth || cd.width) {
+                    col.setAttribute('customWidth', 1);
+                }
+                if(cd.width) {
+                    col.setAttribute('width', cd.width);
+                } else {
+                    col.setAttribute('width', 9.140625);
+                }
+
+                cols.appendChild(col);
+            }
+            return cols;
+        },
+
+        /**
+         * Sets the page settings on a worksheet node.
+         *
+         * @param {XML Doc} doc
+         * @param {XML Node} worksheet
+         * @returns {undefined}
+         */
+        exportPageSettings: function (doc, worksheet) {
+            if(this._margin) {
+            	var defaultVal = 0.7;
+            	var left = this._margin.left?this._margin.left:defaultVal;
+            	var right = this._margin.right?this._margin.right:defaultVal;
+            	var top = this._margin.top?this._margin.top:defaultVal;
+            	var bottom = this._margin.bottom?this._margin.bottom:defaultVal;
+            	defaultVal = 0.3;
+            	var header = this._margin.header?this._margin.header:defaultVal;
+            	var footer = this._margin.footer?this._margin.footer:defaultVal;
+
+            	worksheet.appendChild(util.createElement(doc, 'pageMargins', [
+                    ['top', top],
+                    ['bottom', bottom],
+                    ['left', left],
+                    ['right', right],
+                    ['header', header],
+                    ['footer', footer]
+                ]));
+            }
+            if(this._orientation) {
+                worksheet.appendChild(util.createElement(doc, 'pageSetup', [
+                    ['orientation', this._orientation]
+                ]));
+            }
+        },
+
+        /**
+         * http://www.schemacentral.com/sc/ooxml/t-ssml_ST_Orientation.html
+         *
+         * Can be one of 'portrait' or 'landscape'.
+         *
+         * @param {String} orientation
+         * @returns {undefined}
+         */
+        setPageOrientation: function (orientation) {
+            this._orientation = orientation;
+        },
+
+        /**
+         * Set page details in inches.
+         * use this structure:
+         * {
+         *   top: 0.7
+         *   , bottom: 0.7
+         *   , left: 0.7
+         *   , right: 0.7
+         *   , header: 0.3
+         *   , footer: 0.3
+         * }
+         *
+         * @returns {undefined}
+         */
+        setPageMargin: function (input) {
+        	this._margin = input;
+        },
+
+        /**
+         * Expects an array of column definitions. Each column definition needs to have a width assigned to it.
+         *
+         * @param {Array} columns
+         */
+        setColumns: function (columns) {
+            this.columns = columns;
+        },
+
+        /**
+         * Expects an array of data to be translated into cells.
+         *
+         * @param {Array} data Two dimensional array - [ [A1, A2], [B1, B2] ]
+         * @see <a href='/cookbook/addingDataToAWorksheet.html'>Adding data to a worksheet</a>
+         */
+        setData: function (data) {
+            this.data = data;
+        },
+
+        /**
+         * Merge cells in given range
+         *
+         * @param cell1 - A1, A2...
+         * @param cell2 - A2, A3...
+         */
+        mergeCells: function(cell1, cell2) {
+            this.mergedCells.push([cell1, cell2]);
+        },
+
+        /**
+         * Added froze pane
+         * @param column - column number: 0, 1, 2 ...
+         * @param row - row number: 0, 1, 2 ...
+         * @param cell - 'A1'
+         * @deprecated
+         */
+        freezePane: function(column, row, cell) {
+            this.sheetView.freezePane(column, row, cell);
+        },
+
+        /**
+         * Expects an array containing an object full of column format definitions.
+         * http://msdn.microsoft.com/en-us/library/documentformat.openxml.spreadsheet.column.aspx
+         * bestFit
+         * collapsed
+         * customWidth
+         * hidden
+         * max
+         * min
+         * outlineLevel
+         * phonetic
+         * style
+         * width
+         * @param {Array} columnFormats
+         */
+        setColumnFormats: function (columnFormats) {
+            this.columnFormats = columnFormats;
+        }
+    });
+    module.exports = Worksheet;
 
 
 /***/ }),
 
-/***/ 982:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 543:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
 
-"use strict";
 
-var _ = __webpack_require__(804);
-var util = __webpack_require__(328);
+var _ = __nccwpck_require__(804);
 
-/**
- *
- * @param {Object} config
- * @param {Number} config.x The cell column number that the top left of the picture will start in
- * @param {Number} config.y The cell row number that the top left of the picture will start in
- * @param {Number} config.width Width in EMU's
- * @param {Number} config.height Height in EMU's
- * @constructor
- */
-var OneCellAnchor = function (config) {
-    this.x = null;
-    this.y = null;
-    this.xOff = null;
-    this.yOff = null;
-    this.width = null;
-    this.height = null;
-    if(config) {
-        this.setPos(config.x, config.y, config.xOff, config.yOff);
-        this.setDimensions(config.width, config.height);
-    }
+var XMLDOM = function (ns, rootNodeName) {
+    this.documentElement = this.createElement(rootNodeName);
+    this.documentElement.setAttribute('xmlns', ns);
 };
-_.extend(OneCellAnchor.prototype, {
-    setPos: function (x, y, xOff, yOff) {
-        this.x = x;
-        this.y = y;
-        if(xOff !== undefined) {
-            this.xOff = xOff;
-        }
-        if(yOff !== undefined) {
-            this.yOff = yOff;
-        }
+
+_.extend(XMLDOM.prototype, {
+    createElement: function (name) {
+        return new XMLDOM.XMLNode({
+            nodeName: name
+        });
     },
-    setDimensions: function (width, height) {
-        this.width = width;
-        this.height = height;
+    createTextNode: function (text) {
+        return new XMLDOM.TextNode(text);
     },
-    toXML: function (xmlDoc, content) {
-        var root = util.createElement(xmlDoc, 'xdr:oneCellAnchor');
-        var from = util.createElement(xmlDoc, 'xdr:from');
-        var fromCol = util.createElement(xmlDoc, 'xdr:col');
-        fromCol.appendChild(xmlDoc.createTextNode(this.x));
-        var fromColOff = util.createElement(xmlDoc, 'xdr:colOff');
-        fromColOff.appendChild(xmlDoc.createTextNode(this.xOff || 0));
-        var fromRow = util.createElement(xmlDoc, 'xdr:row');
-        fromRow.appendChild(xmlDoc.createTextNode(this.y));
-        var fromRowOff = util.createElement(xmlDoc, 'xdr:rowOff');
-        fromRowOff.appendChild(xmlDoc.createTextNode(this.yOff || 0));
-        from.appendChild(fromCol);
-        from.appendChild(fromColOff);
-        from.appendChild(fromRow);
-        from.appendChild(fromRowOff);
-
-        root.appendChild(from);
-
-        var dimensions = util.createElement(xmlDoc, 'xdr:ext');
-        dimensions.setAttribute('cx', this.width);
-        dimensions.setAttribute('cy', this.height);
-        root.appendChild(dimensions);
-
-        root.appendChild(content);
-
-        root.appendChild(util.createElement(xmlDoc, 'xdr:clientData'));
-        return root;
+    toString: function () {
+        return this.documentElement.toString();
     }
 });
-module.exports = OneCellAnchor;
+
+XMLDOM.Node = function () {};
+XMLDOM.Node.Create = function (config) {
+    switch(config.type) {
+        case "XML":
+            return new XMLDOM.XMLNode(config);
+        case "TEXT":
+            return new XMLDOM.TextNode(config.nodeValue);
+    }
+};
+
+XMLDOM.TextNode = function (text) {
+    this.nodeValue = text;
+};
+ _.extend(XMLDOM.TextNode.prototype, {
+     toJSON: function () {
+         return {
+             nodeValue: this.nodeValue,
+             type: 'TEXT'
+         };
+     },
+    toString: function () {
+        return _.escape(this.nodeValue);
+    }
+ });
+
+XMLDOM.XMLNode = function (config) {
+    this.nodeName = config.nodeName;
+    this.children = [];
+    this.nodeValue = config.nodeValue || "";
+    this.attributes = {};
+
+    if(config.children) {
+        for(var i = 0, l = config.children.length; i < l; i++) {
+            this.appendChild(XMLDOM.Node.Create(config.children[i]));
+        }
+    }
+
+    if(config.attributes) {
+        for(var attr in config.attributes) {
+            if(config.attributes.hasOwnProperty(attr)) {
+                this.setAttribute(attr, config.attributes[attr]);
+            }
+        }
+    }
+};
+_.extend(XMLDOM.XMLNode.prototype, {
+
+    toString: function () {
+        var string = "<" + this.nodeName;
+        for(var attr in this.attributes) {
+            if(this.attributes.hasOwnProperty(attr)) {
+                string = string + " " + attr + "=\""+_.escape(this.attributes[attr])+"\"";
+            }
+        }
+
+        var childContent = "";
+        for(var i = 0, l = this.children.length; i < l; i++) {
+            childContent += this.children[i].toString();
+        }
+
+        if (childContent){
+            string +=  ">" + childContent + "</" + this.nodeName + ">";
+        } else {
+            string += "/>";
+        }
+
+        return string;
+    },
+
+    toJSON: function () {
+        var children = [];
+        for(var i = 0, l = this.children.length; i < l; i++) {
+            children.push(this.children[i].toJSON());
+        }
+        return {
+            nodeName: this.nodeName,
+            children: children,
+            nodeValue: this.nodeValue,
+            attributes: this.attributes,
+            type: "XML"
+        };
+    },
+
+    setAttribute: function (name, val) {
+        if(val === null) {
+            delete this.attributes[name];
+            delete this[name];
+            return;
+        }
+        this.attributes[name] = val;
+        this[name] = val;
+    },
+    appendChild: function (child) {
+        this.children.push(child);
+        this.firstChild = this.children[0];
+    },
+    cloneNode: function () {
+        return new XMLDOM.XMLNode(this.toJSON());
+    }
+});
+
+module.exports = XMLDOM;
+
+/***/ }),
+
+/***/ 328:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+var XMLDOM = __nccwpck_require__(543);
+var _ = __nccwpck_require__(804);
+/**
+ * @module Excel/util
+ */
+
+var util = {
+
+    _idSpaces: {},
+
+    /**
+     * Returns a number based on a namespace. So, running with 'Picture' will return 1. Run again, you will get 2. Run with 'Foo', you'll get 1.
+     * @param {String} space
+     * @returns {Number}
+     */
+    uniqueId: function (space) {
+        if(!this._idSpaces[space]) {
+            this._idSpaces[space] = 1;
+        }
+        return this._idSpaces[space]++;
+    },
+
+    /**
+     * Attempts to create an XML document. After some investigation, using the 'fake' document
+     * is significantly faster than creating an actual XML document, so we're going to go with
+     * that. Besides, it just makes it easier to port to node.
+     *
+     * Takes a namespace to start the xml file in, as well as the root element
+     * of the xml file.
+     *
+     * @param {type} ns
+     * @param {type} base
+     * @returns {@new;XMLDOM}
+     */
+    createXmlDoc: function (ns, base) {
+        return new XMLDOM(ns || null, base, null);
+    },
+
+    /**
+     * Creates an xml node (element). Used to simplify some calls, as IE is
+     * very particular about namespaces and such.
+     *
+     * @param {XMLDOM} doc An xml document (actual DOM or fake DOM, not a string)
+     * @param {type} name The name of the element
+     * @param {type} attributes
+     * @returns {XML Node}
+     */
+    createElement: function (doc, name, attributes) {
+        var el = doc.createElement(name);
+        attributes = attributes || [];
+        var i = attributes.length;
+        while (i--) {
+            el.setAttribute(attributes[i][0], attributes[i][1]);
+        }
+        return el;
+    },
+
+    /**
+     * This is sort of slow, but it's a huge convenience method for the code. It probably shouldn't be used
+     * in high repetition areas.
+     *
+     * @param {XMLDoc} doc
+     * @param {Object} attrs
+     */
+    setAttributesOnDoc: function (doc, attrs) {
+        _.forEach(attrs, function (v, k) {
+            if(_.isPlainObject(v)) {
+                if(v.v !== null && v.v !== undefined) {
+                    switch(v.type) {
+                        case Boolean:
+                            v = v.v ? '1' : '0';
+                            break;
+                    }
+                } else {
+                    v = null;
+                }
+            }
+            if(v !== null && v !== undefined) {
+                doc.setAttribute(k, v);
+            }
+        });
+    },
+
+    LETTER_REFS: {},
+
+    positionToLetterRef: function (x, y) {
+        var digit = 1, index, num = x, string = "", alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        if(this.LETTER_REFS[x]) {
+            return this.LETTER_REFS[x].concat(y);
+        }
+        while (num > 0) {
+            num -= Math.pow(26, digit -1);
+            index = num % Math.pow(26, digit);
+            num -= index;
+            index = index / Math.pow(26, digit - 1);
+            string = alphabet.charAt(index) + string;
+            digit += 1;
+        }
+        this.LETTER_REFS[x] = string;
+        return string.concat(y);
+    },
+
+    schemas: {
+        'worksheet': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet',
+        'sharedStrings': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
+        'stylesheet': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+        'relationships': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+        'relationshipPackage': "http://schemas.openxmlformats.org/package/2006/relationships",
+        'contentTypes': "http://schemas.openxmlformats.org/package/2006/content-types",
+        'spreadsheetml': "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+        'markupCompat': "http://schemas.openxmlformats.org/markup-compatibility/2006",
+        'x14ac': "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac",
+        'officeDocument': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+        'package': "http://schemas.openxmlformats.org/package/2006/relationships",
+        'table': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
+        'spreadsheetDrawing': 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing',
+        'drawing': 'http://schemas.openxmlformats.org/drawingml/2006/main',
+        'drawingRelationship': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing',
+        'image': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+        'chart': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+        'hyperlink': "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"
+    }
+};
+
+module.exports = util;
+
+
+/***/ }),
+
+/***/ 450:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+
+var Workbook = __nccwpck_require__(952);
+var Table = __nccwpck_require__(496);
+var _ = __nccwpck_require__(804);
+
+var Template = function (worksheetConstructorSettings) {
+    this.workbook = new Workbook();
+    this.stylesheet = this.workbook.getStyleSheet();
+
+    this.columns = {};
+
+    this.predefinedStyles = {
+
+    };
+
+    this.predefinedFormatters = {
+        date: this.stylesheet.createSimpleFormatter('date'),
+        currency: this.stylesheet.createFormat({format: "$ #,##0.00;$ #,##0.00;-", font: {color: "FFE9F50A"}}),
+        header: this.stylesheet.createFormat({
+            font: { bold: true, underline: true, color: {theme: 3}},
+            alignment: {horizontal: 'center'}
+        })
+    };
+
+    if(worksheetConstructorSettings != null) {
+        this.worksheet = this.workbook.createWorksheet(worksheetConstructorSettings);
+    }
+    else {
+        this.worksheet = this.workbook.createWorksheet();
+    }
+    this.workbook.addWorksheet(this.worksheet);
+    this.worksheet.setPageOrientation('landscape');
+    this.table = new Table();
+    this.table.styleInfo.themeStyle = "TableStyleLight1";
+    this.worksheet.addTable(this.table);
+    this.workbook.addTable(this.table);
+};
+
+_.extend(Template.prototype, {
+    setHeader: function () {
+        this.worksheet.setHeader.apply(this.worksheet, arguments);
+    },
+    setFooter: function () {
+        this.worksheet.setFooter.apply(this.worksheet, arguments);
+    },
+    prepare: function () {
+        return this.workbook;
+    },
+
+    setData: function (worksheetData) {
+        this.worksheet.setData(worksheetData);
+        this.data = worksheetData;
+        this.table.setReferenceRange([1, 1], [this.columns.length, worksheetData.length]);
+    },
+
+    setColumns: function (columns) {
+        this.columns = columns;
+        this.worksheet.setColumns(columns);
+        this.table.setTableColumns(columns);
+        this.table.setReferenceRange([1, 1], [this.columns.length, this.data.length]);
+    },
+
+    getWorksheet: function () {
+        return this.worksheet;
+    }
+});
+
+module.exports = Template;
+
+
+/***/ }),
+
+/***/ 133:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+module.exports = {
+    BasicReport: __nccwpck_require__(450)
+};
+
+
+/***/ }),
+
+/***/ 396:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+var _ = __nccwpck_require__(804);
+var Workbook = __nccwpck_require__(952);
+var JSZip = __nccwpck_require__(395);
+//var WorkbookWorker = require('./Worker');
+
+/**
+ * @name Excel
+ * @public
+ * @author Stephen Liberty
+ * @requires underscore
+ * @requires Excel/Workbook
+ * @requires JSZIP
+ * @exports excel-builder
+ */
+var Factory = {
+    /**
+     * Creates a new workbook.
+     */
+    createWorkbook: function () {
+        return new Workbook();
+    },
+
+    config: {
+        forceUIThread: false
+    },
+
+    /**
+     * Turns a workbook into a downloadable file.
+     * @param {Excel/Workbook} workbook The workbook that is being converted
+     * @param {Object} options - options to modify how the zip is created. See http://stuk.github.io/jszip/#doc_generate_options
+     * @returns {Promise}
+     */
+    createFile: function (workbook, options) {
+        var zip = new JSZip();
+        return workbook.generateFiles().then(function (files) {
+            _.each(files, function (content, path) {
+                path = path.substr(1);
+                if(path.indexOf('.xml') !== -1 || path.indexOf('.rel') !== -1) {
+                    zip.file(path, content, {base64: false});
+                } else {
+                    zip.file(path, content, {base64: true, binary: true});
+                }
+            });
+            return zip.generateAsync(_.defaults(options || {}, {
+                type: "base64"
+            }));
+        });
+    }
+};
+
+
+module.exports = Factory;
+
+
+/***/ }),
+
+/***/ 351:
+/***/ (function(module, __unused_webpack_exports, __nccwpck_require__) {
+
+
+
+var EBExport = module.exports = {
+    Drawings: __nccwpck_require__(861),
+    Drawing: __nccwpck_require__(890),
+    Pane: __nccwpck_require__(753),
+    Paths: __nccwpck_require__(255),
+    Positioning: __nccwpck_require__(864),
+    RelationshipManager: __nccwpck_require__(785),
+    SharedStrings: __nccwpck_require__(349),
+    SheetView: __nccwpck_require__(958),
+    StyleSheet: __nccwpck_require__(747),
+    Table: __nccwpck_require__(496),
+    util: __nccwpck_require__(328),
+    Workbook: __nccwpck_require__(952),
+    Worksheet: __nccwpck_require__(20),
+    XMLDOM: __nccwpck_require__(543),
+    Builder: __nccwpck_require__(396),
+    Template: __nccwpck_require__(133)
+};
+
+try {
+    if(typeof window !== 'undefined') {
+        window.ExcelBuilder = EBExport;
+    }
+} catch (e) {
+    //Silently ignore?
+    console.info("Not attaching EB to window");
+}
+
+
+/***/ }),
+
+/***/ 395:
+/***/ (function(module) {
+
+module.exports = require("jszip");;
+
+/***/ }),
+
+/***/ 804:
+/***/ (function(module) {
+
+module.exports = require("lodash");;
+
+/***/ }),
+
+/***/ 434:
+/***/ (function(module) {
+
+module.exports = require("q");;
 
 /***/ })
 
-/******/ });
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __nccwpck_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		var threw = true;
+/******/ 		try {
+/******/ 			__webpack_modules__[moduleId](module, module.exports, __nccwpck_require__);
+/******/ 			threw = false;
+/******/ 		} finally {
+/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
+/******/ 		}
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat */
+/******/ 	
+/******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	// module exports must be returned from runtime so entry inlining is disabled
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	return __nccwpck_require__(351);
+/******/ })()
+;

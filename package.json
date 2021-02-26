@@ -1,14 +1,13 @@
 {
   "name": "excel-builder-webpacker",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Customized version of excel-builder that can be run with webpack and other bundlers",
   "main": "dist/index.js",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "ncc build src/index.js -e lodash -e jszip -e q",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "ncc build src/index.js -e lodash -e jszip -e q --target es5"
   },
   "repository": {
     "type": "git",
@@ -27,11 +26,11 @@
   },
   "homepage": "http://excelbuilderjs.com/",
   "devDependencies": {
-    "@vercel/ncc": "^0.23.0"
+    "@vercel/ncc": "^0.27.0"
   },
   "dependencies": {
-    "jszip": "3.4.0",
-    "lodash": "^4.17.15",
+    "jszip": "^3.6.0",
+    "lodash": "^4.17.21",
     "q": "^1.5.1"
   }
 }
