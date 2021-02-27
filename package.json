@@ -29,7 +29,7 @@
     "@vercel/ncc": "^0.27.0"
   },
   "dependencies": {
-    "jszip": "^3.6.0",
+    "jszip": "3.5.0",
     "lodash": "^4.17.21",
     "q": "^1.5.1"
   }
