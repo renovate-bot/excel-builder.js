@@ -3118,7 +3118,7 @@ module.exports = require("q");;
 /******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
-/******/ 	var __dirname = typeof __dirname !== 'undefined' ? __dirname : path.resolve(path.dirname(''));
+/******/ 	var __dirname = typeof __dirname !== 'undefined' ? __dirname : "";
 /******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
