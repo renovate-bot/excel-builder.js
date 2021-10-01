@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hohiep102/excel-builder.js.git"
+    "url": "https://github.com/ghiscoding/excel-builder.js.git"
   },
   "keywords": [
     "excel",
@@ -22,7 +22,7 @@
   "author": "Stephen Liberty",
   "license": "(MIT OR GPLv3)",
   "bugs": {
-    "url": "https://github.com/hohiep102/excel-builder.js/issues"
+    "url": "https://github.com/ghiscoding/excel-builder.js/issues"
   },
   "homepage": "http://excelbuilderjs.com/",
   "devDependencies": {
