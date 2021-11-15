@@ -1,7 +1,7 @@
 "use strict";
 var _ = require('lodash');
 var Workbook = require('./Excel/Workbook');
-var JSZip = require('jszip');
+var JSZip = require('jszip/dist/jszip.min.js');
 //var WorkbookWorker = require('./Worker');
 
 /**

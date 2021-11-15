@@ -374,7 +374,7 @@ var TwoCellAnchor = __nccwpck_require__(527);
 
 /**
  * This is mostly a global spot where all of the relationship managers can get and set
- * path information from/to. 
+ * path information from/to.
  * @module Excel/Drawing
  */
 var Drawing = function () {
@@ -3067,7 +3067,7 @@ try {
 /***/ 395:
 /***/ (function(module) {
 
-module.exports = require("jszip");;
+module.exports = require("jszip/dist/jszip.min.js");;
 
 /***/ }),
 
@@ -3089,7 +3089,7 @@ module.exports = require("q");;
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
-/******/ 	
+/******/
 /******/ 	// The require function
 /******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
@@ -3102,7 +3102,7 @@ module.exports = require("q");;
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
-/******/ 	
+/******/
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
@@ -3111,11 +3111,11 @@ module.exports = require("q");;
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 		}
-/******/ 	
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/ 	
+/******/
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
 /******/ 	var __dirname = typeof __dirname !== 'undefined' ? __dirname : "";
