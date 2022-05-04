@@ -20,7 +20,7 @@
     "spreadsheet"
   ],
   "author": "Stephen Liberty",
-  "license": "(MIT OR GPLv3)",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/ghiscoding/excel-builder.js/issues"
   },
