@@ -11,7 +11,7 @@ API documentation. New site coming soon with up-to-date documentation, and abili
 
 ### Note (2022-05-01)
 
-The original License was a dual MIT/GPLv3 license but that was a little confusing. However, we got great news recently since we receive Stephen Liberty's blessing (which is the original author of [excel-builder.js](https://github.com/stephenliberty/excel-builder.js)) to convert to a single MIT License which is more permissive, see the entire license discussion in the issue [#2](https://github.com/ghiscoding/excel-builder.js/issues/2#issuecomment-1114279973). I want to provide again my big thanks to Stephen's hard work in creating Excel-Builder which is still used by many of us, thank you so much.
+The original License was a dual MIT/GPLv3 license but that was a little confusing. However, we got some great news recently which was to receive Stephen Liberty's blessing (who is the original author of [excel-builder.js](https://github.com/stephenliberty/excel-builder.js)) to convert to a single MIT License which is more permissive, see the entire license discussion in the issue [#2](https://github.com/ghiscoding/excel-builder.js/issues/2#issuecomment-1114279973). I want to provide again my big thanks to Stephen's hard work in creating Excel-Builder which is still used by many of us, thank you so much.
 
 Installing via NPM
 ------------------
