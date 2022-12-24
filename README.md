@@ -1,6 +1,6 @@
 excel-builder-webpacker.js
 ================
-An excel-builder version which support webpack
+An excel-builder version which support Webpack and RequireJS
 This is a fork from excel-builder which wasn't maintained.
 
 Documentation at http://excelbuilderjs.com/. This is slightly outdated, but includes a 'cookbook' and some
